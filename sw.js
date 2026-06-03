@@ -1,4 +1,4 @@
-const CACHE = 'bloom-v2';
+const CACHE = 'bloom-v3';
 const ASSETS = [
   '/planner/',
   '/planner/index.html',
@@ -13,13 +13,6 @@ const ASSETS = [
   '/planner/js/calendar.js',
   '/planner/js/symptoms.js',
   '/planner/js/settings.js'
-];
-const ASSETS = [
-  '/', '/index.html', '/css/styles.css',
-  '/js/db.js', '/js/app.js', '/js/router.js',
-  '/js/today.js', '/js/weekly.js', '/js/monthly.js',
-  '/js/fitness.js', '/js/calendar.js', '/js/symptoms.js',
-  '/js/settings.js'
 ];
 
 self.addEventListener('install', e => {
