@@ -1,51 +1,1199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#C97B8A">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Bloom">
-  <title>Bloom Planner</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bloom">
+<meta name="theme-color" content="#C97B8A">
+<title>Bloom Planner</title>
+<style>
+:root{--mauve:#C97B8A;--deep:#A3465A;--rose:#E8A0A0;--blush:#F9D4D4;--lt:#FFF5F5;--card:#FFFFFF;--text:#1C1C1E;--sub:#6C6C70;--r:14px;--sh:0 3px 14px rgba(163,70,90,.10)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--lt);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100vh;max-width:540px;margin:0 auto}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 80px;background:var(--lt)}
+#tabbar{display:flex;background:var(--card);border-top:1px solid var(--blush);padding-bottom:env(safe-area-inset-bottom,6px);box-shadow:0 -2px 12px rgba(163,70,90,.08);flex-shrink:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--sub);font-size:9px;font-family:inherit;font-weight:500;padding:10px 2px;-webkit-tap-highlight-color:transparent}
+.tab .ic{font-size:22px;line-height:1}
+.tab.on{color:var(--mauve)}
+.tab.on .ic{transform:scale(1.1)}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;margin-bottom:14px}
+h1{font-size:1.7rem;font-weight:700;color:var(--deep)}
+.sub{font-size:.74rem;color:var(--mauve);text-transform:uppercase;letter-spacing:.8px;font-weight:500;margin-bottom:2px}
+.sec{margin-bottom:22px}
+.sec-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.sec-hd h2{font-size:1rem;font-weight:600;color:var(--mauve);flex:1}
+.lbl{font-size:.68rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+/* Task */
+.tcard{display:flex;align-items:flex-start;gap:12px}
+.tcard.done .ttl{text-decoration:line-through;color:var(--sub)}
+.chk{width:30px;height:30px;border-radius:50%;border:2px solid var(--rose);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.chk.on{background:var(--mauve);border-color:var(--mauve)}
+.tc{flex:1;min-width:0}
+.tr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ttl{font-size:.95rem;font-weight:500;line-height:1.3}
+.meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px;font-size:.78rem;color:var(--sub)}
+.note{font-size:.75rem;color:var(--sub);margin-top:3px}
+.del{background:none;border:none;cursor:pointer;font-size:1rem;opacity:.4;flex-shrink:0;padding:4px}
+.pill{display:inline-block;font-size:.68rem;font-weight:600;color:#fff;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.ovr{font-size:.65rem;font-weight:600;background:var(--deep);color:#fff;padding:2px 8px;border-radius:999px}
+/* Buttons */
+.btn{background:var(--mauve);color:#fff;border:none;border-radius:var(--r);padding:14px 22px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;width:100%}
+.btn:active{opacity:.85}
+.btn2{background:var(--lt);color:var(--mauve);border:none;border-radius:var(--r);padding:12px 18px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit}
+.bsm{background:var(--lt);color:var(--mauve);border:none;border-radius:8px;padding:8px 14px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.bsm.on{background:var(--mauve);color:#fff}
+.bfab{width:36px;height:36px;border-radius:50%;background:var(--mauve);color:#fff;border:none;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(163,70,90,.3);flex-shrink:0}
+/* Forms */
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:.72rem;font-weight:700;color:var(--mauve);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
+.inp{width:100%;padding:13px 15px;border:1.5px solid var(--blush);border-radius:12px;font-size:1rem;font-family:inherit;background:#fff;color:var(--text);outline:none;-webkit-appearance:none;appearance:none}
+.inp:focus{border-color:var(--mauve)}
+select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C97B8A' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+.slider{width:100%;accent-color:var(--mauve);margin:8px 0}
+.sl-lbl{display:flex;justify-content:space-between;font-size:1.2rem}
+/* Modals */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:200}
+.overlay.hide{display:none!important}
+.modal{background:var(--lt);border-radius:24px 24px 0 0;width:100%;max-width:540px;max-height:85vh;display:flex;flex-direction:column;animation:up .3s ease}
+.mhd{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 16px;border-bottom:1px solid var(--blush);flex-shrink:0}
+.mhd h3{font-size:1.1rem;font-weight:700;color:var(--deep)}
+.mclose{background:var(--blush);border:none;font-size:.9rem;color:var(--sub);cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+.mscroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 20px}
+.mfoot{padding:12px 20px;padding-bottom:max(16px,env(safe-area-inset-bottom));border-top:1px solid var(--blush);flex-shrink:0}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+/* Calendar */
+.cal-grid-hd{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px}
+.cal-dl{text-align:center;font-size:.68rem;font-weight:600;color:var(--sub)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;padding:4px 2px 2px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cal-cell.today{background:#fdf0f0}
+.cal-cell.pd{background:rgba(233,30,99,.07)}
+.cal-cell.empty{cursor:default}
+.cal-num{font-size:.82rem;font-weight:500;margin-bottom:3px}
+.today-num{background:var(--mauve);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem}
+.dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center}
+.dot{width:5px;height:5px;border-radius:50%}
+.pain-dot{width:5px;height:5px;border-radius:50%;background:#f44336}
+/* Ring */
+.ring-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ring-lbl{position:absolute;font-size:.75rem;font-weight:700;color:var(--mauve)}
+/* Weekly */
+.dot-row{display:flex;gap:7px;margin-bottom:12px}
+.cdot{width:11px;height:11px;border-radius:50%;background:var(--blush)}
+.log-btn{width:100%;padding:12px;background:#fdf0f0;color:var(--mauve);border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit}
+.goal{text-align:center;padding:12px;background:#e8f5e9;color:#2e7d32;border-radius:10px;font-weight:600;font-size:.9rem}
+/* Settings */
+.scard{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:14px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--blush);font-size:.92rem;gap:10px}
+.srow:last-child{border-bottom:none}
+.rl{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.rr{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.cdotc{width:20px;height:20px;border-radius:50%;flex-shrink:0}
+.cw{width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none;padding:0}
+.cm{width:32px;height:28px;border:none;border-radius:6px;cursor:pointer;background:none;padding:0}
+/* Fitness */
+.hm{display:grid;grid-template-columns:repeat(70,1fr);gap:2px;overflow-x:auto;margin-bottom:4px}
+.hc{aspect-ratio:1;border-radius:2px;min-width:8px}
+.timer{font-size:2rem;font-weight:700;color:var(--deep);font-family:monospace;flex:1}
+.ebar{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;box-shadow:var(--sh)}
+.excard{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--sh)}
+.exhd{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tgg{display:flex;border-radius:8px;overflow:hidden;border:1.5px solid var(--blush);flex-shrink:0}
+.tgb{padding:7px 12px;font-size:.78rem;font-weight:600;border:none;background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
+.tgb.on{background:var(--mauve);color:#fff}
+.set-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--blush)}
+.wb{width:26px;height:26px;border-radius:50%;border:none;background:var(--blush);color:var(--sub);font-size:.68rem;font-weight:700;cursor:pointer;flex-shrink:0}
+.wb.on{background:#ff9800;color:#fff}
+.rc{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.rb{width:28px;height:28px;border-radius:50%;border:none;background:var(--blush);cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;color:var(--mauve);font-weight:600}
+.rv{font-weight:700;min-width:26px;text-align:center}
+.wc{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+.wi{width:62px;padding:7px 8px;text-align:right}
+.ut{padding:6px 12px;border:1.5px solid var(--blush);border-radius:8px;background:none;color:var(--mauve);font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit}
+.bd-pick{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap;flex-shrink:0}
+.bd{width:26px;height:26px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.bd.on{border-color:#fff;outline:2.5px solid var(--mauve);transform:scale(1.2)}
+.add-set{background:none;border:none;color:var(--mauve);font-size:.88rem;font-weight:600;cursor:pointer;padding:6px 0;font-family:inherit}
+.stat{text-align:center;flex:1}
+.sv{font-size:1.2rem;font-weight:700;color:var(--deep)}
+.sl{font-size:.68rem;color:var(--sub);margin-top:2px}
+.tmpl{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tmpl-info{flex:1;min-width:0}
+/* Pain */
+.pb{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:999px;margin-left:auto}
+.pb.lo{background:#e8f5e9;color:#2e7d32}
+.pb.md{background:#fff3e0;color:#e65100}
+.pb.hi{background:#fce4ec;color:#c62828}
+.period-chip{background:#fce4ec;color:#c2185b;padding:3px 12px;border-radius:999px;font-size:.75rem;font-weight:600}
+.day-detail{background:var(--card);border-radius:var(--r);padding:16px;margin-top:14px;box-shadow:var(--sh)}
+.day-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.di{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--blush);font-size:.9rem}
+/* Week grid */
+.wg{overflow-x:auto}
+.wg-hrow,.wg-row{display:grid;grid-template-columns:44px repeat(7,1fr)}
+.wg-dh{text-align:center;padding:8px 2px;font-size:.72rem;border-bottom:1px solid var(--blush)}
+.wg-tc{font-size:.62rem;color:var(--sub);text-align:right;padding-right:6px;padding-top:4px}
+.wg-row{border-bottom:1px solid var(--blush);min-height:52px}
+.wg-cell{border-left:1px solid var(--blush)}
+.wg-today{background:#fdf0f0}
+.wg-pd{background:rgba(233,30,99,.04)}
+.muted{color:var(--sub);font-size:.82rem}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:72px;margin-bottom:14px;overflow-x:auto}
+.bc{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
+.bar{border-radius:4px 4px 0 0;min-width:16px}
+.bl{font-size:.58rem;color:var(--sub)}
+.insight{font-size:.84rem;padding:5px 0;line-height:1.4}
+.empty{color:var(--sub);font-size:.9rem;text-align:center;padding:24px 0}
+.page-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-top:4px}
+.sum-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.hide{display:none!important}
+</style>
 </head>
 <body>
-  <div id="app">
-    <!-- Main content area -->
-    <div id="main-content"></div>
+<div id="app">
+  <div id="content"></div>
+  <nav id="tabbar">
+    <button class="tab on" data-tab="today"><span class="ic">☀️</span>Today</button>
+    <button class="tab" data-tab="weekly"><span class="ic">🔄</span>Weekly</button>
+    <button class="tab" data-tab="monthly"><span class="ic">📅</span>Monthly</button>
+    <button class="tab" data-tab="fitness"><span class="ic">💪</span>Fitness</button>
+    <button class="tab" data-tab="calendar"><span class="ic">🗓</span>Calendar</button>
+    <button class="tab" data-tab="settings"><span class="ic">⚙️</span>Settings</button>
+  </nav>
+</div>
+<script>
+// ═══════════════════════════════════════════════════════
+// DB
+// ═══════════════════════════════════════════════════════
+const DB={name:'BloomPWA',ver:1,_db:null};
+DB.open=()=>new Promise((ok,fail)=>{
+  if(DB._db)return ok(DB._db);
+  const r=indexedDB.open(DB.name,DB.ver);
+  r.onupgradeneeded=e=>{
+    const db=e.target.result;
+    ['tasks','categories','workoutSessions','workoutTemplates','personalRecords','periodEntries','symptomLogs','resistanceBands','settings']
+      .forEach(s=>{if(!db.objectStoreNames.contains(s))db.createObjectStore(s,{keyPath:'id'})});
+  };
+  r.onsuccess=e=>{DB._db=e.target.result;ok(DB._db)};
+  r.onerror=e=>fail(e.target.error);
+});
+DB.all=async s=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>f(r.error)})};
+DB.get=async(s,id)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readonly').objectStore(s).get(id);r.onsuccess=()=>ok(r.result);r.onerror=()=>f(r.error)})};
+DB.put=async(s,item)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(item);r.onsuccess=()=>ok(r.result);r.onerror=()=>f(r.error)})};
+DB.del=async(s,id)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(id);r.onsuccess=()=>ok();r.onerror=()=>f(r.error)})};
+const uid=()=>crypto.randomUUID();
+const ts=()=>new Date().toISOString();
 
-    <!-- Bottom tab bar -->
-    <nav id="tab-bar">
-      <button class="tab-btn active" data-tab="today">
-        <span class="tab-icon">☀️</span>
-        Today
-      </button>
-      <button class="tab-btn" data-tab="weekly">
-        <span class="tab-icon">🔄</span>
-        Weekly
-      </button>
-      <button class="tab-btn" data-tab="monthly">
-        <span class="tab-icon">📅</span>
-        Monthly
-      </button>
-      <button class="tab-btn" data-tab="fitness">
-        <span class="tab-icon">💪</span>
-        Fitness
-      </button>
-      <button class="tab-btn" data-tab="calendar">
-        <span class="tab-icon">🗓</span>
-        Calendar
-      </button>
-      <button class="tab-btn" data-tab="settings">
-        <span class="tab-icon">⚙️</span>
-        Settings
-      </button>
-    </nav>
+// ═══════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════
+async function applyTheme(hex){
+  const r=document.documentElement;
+  const[ri,gi,bi]=hex.replace('#','').match(/.{2}/g).map(x=>parseInt(x,16)/255);
+  const max=Math.max(ri,gi,bi),min=Math.min(ri,gi,bi);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0}else{
+    const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);
+    switch(max){case ri:h=(gi-bi)/d+(gi<bi?6:0);break;case gi:h=(bi-ri)/d+2;break;case bi:h=(ri-gi)/d+4;break}
+    h/=6;
+  }
+  const h2c=(h,s,l)=>{
+    if(!s){const v=Math.round(l*255);return'#'+[v,v,v].map(x=>x.toString(16).padStart(2,'0')).join('')}
+    const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;
+    const hu=(h,p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<.5)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p};
+    return'#'+[h+1/3,h,h-1/3].map(t=>Math.round(hu(h,p,q,t)*255).toString(16).padStart(2,'0')).join('');
+  };
+  const cl=(ds,dl)=>h2c(h,Math.max(0,Math.min(1,s+ds)),Math.max(0,Math.min(1,l+dl)));
+  r.style.setProperty('--mauve',hex);
+  r.style.setProperty('--deep',cl(.08,-.12));
+  r.style.setProperty('--rose',cl(-.15,.10));
+  r.style.setProperty('--blush',cl(-.30,.20));
+  r.style.setProperty('--lt',cl(-.50,.30));
+  r.style.setProperty('--card',cl(-.55,.33));
+  await DB.put('settings',{id:'theme',baseColor:hex});
+}
+
+// ═══════════════════════════════════════════════════════
+// SEED
+// ═══════════════════════════════════════════════════════
+async function seed(){
+  const cats=await DB.all('categories');
+  if(cats.length)return;
+  const defs=[
+    {id:uid(),name:'Physical Therapy',colorHex:'#5BBFBF'},
+    {id:uid(),name:'Lifting',colorHex:'#9B7FD4'},
+    {id:uid(),name:'Cardio',colorHex:'#F0934A'},
+    {id:uid(),name:'Self-Care',colorHex:'#E8A0A0'},
+    {id:uid(),name:'Work',colorHex:'#6BAED6'},
+  ];
+  for(const c of defs)await DB.put('categories',c);
+  await DB.put('tasks',{id:uid(),title:'Morning journal',notes:'Write 3 gratitude',taskType:'daily',priority:'low',categoryId:defs[3].id,isCompleted:false,createdAt:ts()});
+  await DB.put('tasks',{id:uid(),title:'Physical therapy for hips',taskType:'weekly',weeklyFrequency:3,categoryId:defs[0].id,weeklyCompletions:[],isCompleted:false,createdAt:ts()});
+  await DB.put('tasks',{id:uid(),title:'Lash lift',taskType:'monthly',monthlyPreferredDay:15,categoryId:defs[3].id,isCompleted:false,lastCompletedDate:null,createdAt:ts()});
+}
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+function fmtTime(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function isToday(iso){return new Date(iso).toDateString()===new Date().toDateString()}
+function sameWeek(iso){
+  const d=new Date(iso),n=new Date();
+  const mon=new Date(n);mon.setDate(n.getDate()-((n.getDay()+6)%7));mon.setHours(0,0,0,0);
+  return d>=mon;
+}
+function monthlyStatus(t){
+  if(!t.lastCompletedDate)return'overdue';
+  const l=new Date(t.lastCompletedDate),n=new Date();
+  if(l.getMonth()===n.getMonth()&&l.getFullYear()===n.getFullYear())return'done';
+  if(t.monthlyPreferredDay){const diff=t.monthlyPreferredDay-n.getDate();if(diff>=0&&diff<=5)return'soon'}
+  return'overdue';
+}
+function isOverdue(t){
+  if(t.taskType!=='daily'||t.isCompleted)return false;
+  return!isToday(t.createdAt)&&new Date(t.createdAt)<new Date();
+}
+function catMap(cats){return Object.fromEntries(cats.map(c=>[c.id,c]))}
+function pillHtml(cat){return cat?`<span class="pill" style="background:${cat.colorHex}">${cat.name}</span>`:''}
+function ring(pct,color,size=52,lw=5){
+  const r=size/2-lw;const circ=2*Math.PI*r;
+  return`<div class="ring-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#F9D4D4" stroke-width="${lw}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color||'var(--mauve)'}" stroke-width="${lw}"
+      stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct)}" transform="rotate(-90 ${size/2} ${size/2})" stroke-linecap="round"/>
+  </svg><span class="ring-lbl">${Math.round(pct*100)}%</span></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// ROUTER
+// ═══════════════════════════════════════════════════════
+const Tabs={today:renderToday,weekly:renderWeekly,monthly:renderMonthly,fitness:renderFitness,calendar:renderCalendar,settings:renderSettings};
+let curTab='today';
+function navigate(tab){
+  curTab=tab;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  const c=document.getElementById('content');
+  c.innerHTML='<div style="padding:32px;text-align:center;color:var(--mauve)">Loading…</div>';
+  Tabs[tab]?.(c);
+  c.scrollTop=0;
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.tab)));
+
+// ═══════════════════════════════════════════════════════
+// TODAY
+// ═══════════════════════════════════════════════════════
+async function renderToday(el){
+  const [tasks,cats]=await Promise.all([DB.all('tasks'),DB.all('categories')]);
+  const cm=catMap(cats);
+  const daily=tasks.filter(t=>t.taskType==='daily'&&(isToday(t.createdAt)||isOverdue(t)));
+  const weekly=tasks.filter(t=>t.taskType==='weekly'&&(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length<t.weeklyFrequency);
+  const monthly=tasks.filter(t=>t.taskType==='monthly'&&monthlyStatus(t)!=='done');
+  const now=new Date();
+  el.innerHTML=`
+    <div class="page-hd">
+      <div><div class="sub">${now.toLocaleDateString('en-US',{weekday:'long'})}</div>
+        <h1>${now.toLocaleDateString('en-US',{month:'long',day:'numeric'})}</h1></div>
+    </div>
+    <div class="sec">
+      <div class="sec-hd"><span>☀️</span><h2>Today's Tasks</h2>
+        <button class="bfab" id="add-d">+</button></div>
+      <div id="dl">${daily.length?daily.map(t=>taskCard(t,cm)).join(''):'<p class="empty">Nothing scheduled — enjoy your day! 🌸</p>'}</div>
+    </div>
+    ${weekly.length?`<div class="sec"><div class="sec-hd"><span>🔄</span><h2>Weekly In Progress</h2></div>
+      ${weekly.map(t=>wMini(t,cm)).join('')}</div>`:''}
+    ${monthly.length?`<div class="sec"><div class="sec-hd"><span>📅</span><h2>Monthly Due</h2></div>
+      ${monthly.map(t=>mMini(t,cm)).join('')}</div>`:''}
+    ${addTaskModal(cats)}`;
+  el.querySelector('#add-d')?.addEventListener('click',()=>el.querySelector('#atm').classList.remove('hide'));
+  el.querySelector('#atm-close')?.addEventListener('click',()=>el.querySelector('#atm').classList.add('hide'));
+  el.querySelector('#atm-save')?.addEventListener('click',async()=>{
+    const title=el.querySelector('#at-title').value.trim();if(!title)return;
+    const t=el.querySelector('#at-time').value;
+    await DB.put('tasks',{id:uid(),title,notes:el.querySelector('#at-notes').value,taskType:'daily',
+      priority:el.querySelector('#at-pri').value,dueDate:t?new Date().toISOString().slice(0,10)+'T'+t:null,
+      isCompleted:false,createdAt:ts()});
+    renderToday(el);
+  });
+  bindTaskEvents(el,tasks,()=>renderToday(el));
+}
+
+function taskCard(t,cm){
+  const cat=cm[t.categoryId];const ovr=isOverdue(t)&&!t.isCompleted;
+  return`<div class="card tcard ${t.isCompleted?'done':''}" data-id="${t.id}">
+    <button class="chk${t.isCompleted?' on':''}" data-chk="${t.id}">${t.isCompleted?'✓':''}</button>
+    <div class="tc"><div class="tr"><span class="ttl">${t.title}</span>
+      ${ovr?'<span class="ovr">Overdue</span>':''}
+    </div>
+    <div class="meta">${t.dueDate?`<span>${fmtTime(t.dueDate)}</span>`:''}${pillHtml(cat)}</div>
+    ${t.notes?`<div class="note">${t.notes}</div>`:''}
+    </div><button class="del" data-del="${t.id}">🗑</button></div>`;
+}
+
+function wMini(t,cm){
+  const cat=cm[t.categoryId];const done=(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length;
+  const pct=Math.min(done/t.weeklyFrequency,1);
+  return`<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+    ${ring(pct,cat?.colorHex,44,4)}<div style="flex:1">
+      <div class="ttl">${t.title}</div>
+      <div class="meta">${done}/${t.weeklyFrequency} this week ${pillHtml(cat)}</div>
+    </div><button class="bsm" data-logw="${t.id}">+Log</button></div>`;
+}
+
+function mMini(t,cm){
+  const cat=cm[t.categoryId];const s=monthlyStatus(t);
+  const ic={done:'✅',soon:'🕐',overdue:'⚠️'}[s];
+  const col={done:'#4caf50',soon:'var(--mauve)',overdue:'var(--deep)'}[s];
+  const lbl={done:'Done this month ✓',soon:'Due soon',overdue:'Overdue'}[s];
+  return`<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+    <span style="font-size:1.5rem">${ic}</span><div style="flex:1">
+      <div class="ttl">${t.title}</div>
+      <div class="meta"><span style="color:${col};font-weight:600">${lbl}</span>${pillHtml(cat)}</div>
+    </div></div>`;
+}
+
+function addTaskModal(cats){
+  return`<div class="overlay hide" id="atm">
+    <div class="modal"><div class="mhd"><h3>New Daily Task</h3><button class="mclose" id="atm-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Title *</label><input type="text" id="at-title" class="inp" placeholder="e.g. Morning walk" autocomplete="off"></div>
+      <div class="fg"><label>Notes</label><textarea id="at-notes" class="inp" rows="2" placeholder="Optional..."></textarea></div>
+      <div class="fg"><label>Due time</label><input type="time" id="at-time" class="inp"></div>
+      <div class="fg"><label>Priority</label><select id="at-pri" class="inp">
+        <option value="none">None</option><option value="low">Low</option>
+        <option value="medium">Medium</option><option value="high">High</option>
+      </select></div>
+      <div class="fg"><label>Category</label><select id="at-cat" class="inp">
+        <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="atm-save">Add Task</button></div></div></div>`;
+}
+
+function bindTaskEvents(el,tasks,refresh){
+  el.querySelectorAll('[data-chk]').forEach(b=>b.addEventListener('click',async()=>{
+    const t=tasks.find(x=>x.id===b.dataset.chk);if(!t)return;
+    t.isCompleted=!t.isCompleted;t.completedAt=t.isCompleted?ts():null;
+    await DB.put('tasks',t);refresh();
+  }));
+  el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Delete?'))return;await DB.del('tasks',b.dataset.del);refresh();
+  }));
+  el.querySelectorAll('[data-logw]').forEach(b=>b.addEventListener('click',async()=>{
+    const t=tasks.find(x=>x.id===b.dataset.logw);if(!t)return;
+    t.weeklyCompletions=[...(t.weeklyCompletions||[]),ts()];await DB.put('tasks',t);refresh();
+  }));
+}
+
+// ═══════════════════════════════════════════════════════
+// WEEKLY
+// ═══════════════════════════════════════════════════════
+async function renderWeekly(el){
+  const[tasks,cats]=await Promise.all([DB.all('tasks'),DB.all('categories')]);
+  const weekly=tasks.filter(t=>t.taskType==='weekly');const cm=catMap(cats);
+  const totF=weekly.reduce((s,t)=>s+t.weeklyFrequency,0);
+  const totD=weekly.reduce((s,t)=>s+(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length,0);
+  const now=new Date();const mon=new Date(now);mon.setDate(now.getDate()-((now.getDay()+6)%7));
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  el.innerHTML=`
+    <div class="page-hd"><div><h1>Weekly Tasks</h1>
+      <div class="sub">${fmt(mon)} – ${fmt(sun)}</div></div>
+      <button class="bfab" id="add-w">+</button></div>
+    <div class="card sum-card">
+      <div><div class="sub">This Week</div><div style="font-size:1.1rem;font-weight:700;color:var(--deep)">${totD} / ${totF} done</div></div>
+      ${ring(totF>0?totD/totF:0,'var(--mauve)',52,5)}
+    </div>
+    <div id="wl">${weekly.length?weekly.map(t=>weekCard(t,cm)).join(''):'<p class="empty">No weekly tasks — tap + to add one 🌸</p>'}</div>
+    ${addWeeklyModal(cats)}`;
+  el.querySelector('#add-w')?.addEventListener('click',()=>el.querySelector('#awm').classList.remove('hide'));
+  el.querySelector('#awm-close')?.addEventListener('click',()=>el.querySelector('#awm').classList.add('hide'));
+  el.querySelector('#awm-save')?.addEventListener('click',async()=>{
+    const title=el.querySelector('#aw-title').value.trim();if(!title)return;
+    await DB.put('tasks',{id:uid(),title,taskType:'weekly',weeklyFrequency:parseInt(el.querySelector('#aw-freq').value)||3,
+      categoryId:el.querySelector('#aw-cat').value||null,weeklyCompletions:[],isCompleted:false,createdAt:ts()});
+    renderWeekly(el);
+  });
+  bindTaskEvents(el,tasks,()=>renderWeekly(el));
+}
+
+function weekCard(t,cm){
+  const cat=cm[t.categoryId];const done=(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length;
+  const pct=Math.min(done/t.weeklyFrequency,1);const goal=done>=t.weeklyFrequency;
+  const dots=Array.from({length:t.weeklyFrequency},(_,i)=>`<span class="cdot" style="${i<done?`background:${cat?.colorHex||'var(--mauve)'}`:''}" ></span>`).join('');
+  return`<div class="card" data-id="${t.id}">
+    <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:12px">
+      ${ring(pct,cat?.colorHex,52,5)}
+      <div style="flex:1"><div class="ttl">${t.title}</div>
+        <div class="meta">${done}/${t.weeklyFrequency} this week ${pillHtml(cat)}</div>
+      </div><button class="del" data-del="${t.id}">🗑</button></div>
+    <div class="dot-row">${dots}</div>
+    ${goal?'<div class="goal">Goal reached! ✨</div>':`<button class="log-btn" data-logw="${t.id}">+ Log Completion</button>`}
+  </div>`;
+}
+
+function addWeeklyModal(cats){
+  return`<div class="overlay hide" id="awm">
+    <div class="modal"><div class="mhd"><h3>New Weekly Task</h3><button class="mclose" id="awm-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Title *</label><input type="text" id="aw-title" class="inp" autocomplete="off"></div>
+      <div class="fg"><label>Times per week</label><input type="number" id="aw-freq" class="inp" value="3" min="1" max="7"></div>
+      <div class="fg"><label>Category</label><select id="aw-cat" class="inp">
+        <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="awm-save">Add Task</button></div></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// MONTHLY
+// ═══════════════════════════════════════════════════════
+async function renderMonthly(el){
+  const[tasks,cats]=await Promise.all([DB.all('tasks'),DB.all('categories')]);
+  const monthly=tasks.filter(t=>t.taskType==='monthly');const cm=catMap(cats);
+  const now=new Date();
+  el.innerHTML=`
+    <div class="page-hd"><div><h1>Monthly Tasks</h1>
+      <div class="sub">${now.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div></div>
+      <button class="bfab" id="add-m">+</button></div>
+    <div id="ml">${monthly.length?monthly.map(t=>monthCard(t,cm)).join(''):'<p class="empty">No monthly tasks — tap + to add one 🌸</p>'}</div>
+    ${addMonthlyModal(cats)}`;
+  el.querySelector('#add-m')?.addEventListener('click',()=>el.querySelector('#amm').classList.remove('hide'));
+  el.querySelector('#amm-close')?.addEventListener('click',()=>el.querySelector('#amm').classList.add('hide'));
+  el.querySelector('#amm-save')?.addEventListener('click',async()=>{
+    const title=el.querySelector('#am-title').value.trim();if(!title)return;
+    await DB.put('tasks',{id:uid(),title,taskType:'monthly',
+      monthlyPreferredDay:parseInt(el.querySelector('#am-day').value)||1,
+      categoryId:el.querySelector('#am-cat').value||null,
+      isCompleted:false,lastCompletedDate:null,createdAt:ts()});
+    renderMonthly(el);
+  });
+  el.querySelectorAll('[data-comp]').forEach(b=>b.addEventListener('click',async()=>{
+    const t=tasks.find(x=>x.id===b.dataset.comp);if(!t)return;
+    t.isCompleted=true;t.lastCompletedDate=ts();t.completedAt=ts();await DB.put('tasks',t);renderMonthly(el);
+  }));
+  el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Delete?'))return;await DB.del('tasks',b.dataset.del);renderMonthly(el);
+  }));
+}
+
+function monthCard(t,cm){
+  const cat=cm[t.categoryId];const s=monthlyStatus(t);
+  const ic={done:'✅',soon:'🕐',overdue:'⚠️'}[s];
+  const col={done:'#4caf50',soon:'var(--mauve)',overdue:'var(--deep)'}[s];
+  const lbl={done:'Done this month ✓',soon:'Due soon',overdue:'Overdue'}[s];
+  return`<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+    <div style="width:50px;height:50px;border-radius:50%;background:${col}22;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">${ic}</div>
+    <div style="flex:1"><div class="ttl">${t.title}</div>
+      <div class="meta"><span style="color:${col};font-weight:600">${lbl}</span>${t.monthlyPreferredDay?`<span>Day ${t.monthlyPreferredDay}</span>`:''}</div>
+      <div class="meta">${pillHtml(cat)}${t.lastCompletedDate?`<span>Last: ${fmtDate(t.lastCompletedDate)}</span>`:''}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${s!=='done'?`<button class="bsm" data-comp="${t.id}">Mark Done</button>`:''}
+      <button class="del" data-del="${t.id}">🗑</button>
+    </div></div>`;
+}
+
+function addMonthlyModal(cats){
+  return`<div class="overlay hide" id="amm">
+    <div class="modal"><div class="mhd"><h3>New Monthly Task</h3><button class="mclose" id="amm-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Title *</label><input type="text" id="am-title" class="inp" autocomplete="off"></div>
+      <div class="fg"><label>Preferred day of month</label><input type="number" id="am-day" class="inp" value="1" min="1" max="28"></div>
+      <div class="fg"><label>Category</label><select id="am-cat" class="inp">
+        <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="amm-save">Add Task</button></div></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// FITNESS
+// ═══════════════════════════════════════════════════════
+let exerciseList=[];
+
+async function renderFitness(el){
+  const[sessions,templates,cats,bands,records]=await Promise.all([
+    DB.all('workoutSessions'),DB.all('workoutTemplates'),DB.all('categories'),
+    DB.all('resistanceBands'),DB.all('personalRecords')
+  ]);
+  const cm=catMap(cats);const now=new Date();
+  const thisMonth=sessions.filter(s=>{const d=new Date(s.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  const avgEx=thisMonth.length?(thisMonth.reduce((s,w)=>s+(w.exertionRating||0),0)/thisMonth.length).toFixed(1):'—';
+  const recent=sessions.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+
+  el.innerHTML=`
+    <div class="page-hd"><div><h1>Fitness</h1><div class="sub">${now.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div></div></div>
+    <div class="card sum-card" style="margin-bottom:16px">
+      <div class="stat"><div class="sv">${thisMonth.length}</div><div class="sl">Workouts</div></div>
+      <div class="stat"><div class="sv">${avgEx}</div><div class="sl">Avg Exertion</div></div>
+      <div class="stat"><button class="bsm" id="view-recap">Recap →</button></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="lbl">Activity — Last 10 Weeks</div>
+      <div class="hm">${buildHeatmap(sessions,cats)}</div>
+    </div>
+    <div class="sec"><div class="sec-hd"><span>📋</span><h2>Workout Templates</h2><button class="bfab" id="new-tmpl">+</button></div>
+      <div id="tmpl-list">${templates.length?templates.map(t=>tmplCard(t,cm)).join(''):'<p class="empty">Save a workout as a template to reuse it</p>'}</div>
+    </div>
+    <div class="sec"><div class="sec-hd"><span>💪</span><h2>Log Workout</h2></div>
+      <button class="btn" id="start-wo">+ Start New Workout</button>
+    </div>
+    <div class="sec"><div class="sec-hd"><span>📖</span><h2>Recent Sessions</h2></div>
+      <div id="sess-list">${recent.length?recent.map(s=>sessCard(s,cm)).join(''):'<p class="empty">No workouts yet — start your first one!</p>'}</div>
+    </div>
+    ${workoutModal(cats,bands)}
+    ${templateModal(cats)}
+    ${recapModal()}`;
+
+  el.querySelector('#start-wo')?.addEventListener('click',()=>{exerciseList=[];el.querySelector('#wo-modal').classList.remove('hide');});
+  el.querySelector('#new-tmpl')?.addEventListener('click',()=>{el.querySelector('#tmpl-modal').classList.remove('hide');el.querySelector('#tmpl-exs').innerHTML='';});
+  el.querySelector('#view-recap')?.addEventListener('click',()=>showRecap(el));
+  el.querySelectorAll('[data-use-tmpl]').forEach(b=>b.addEventListener('click',()=>{
+    const tmpl=templates.find(t=>t.id===b.dataset.useTmpl);if(!tmpl)return;
+    exerciseList=[];el.querySelector('#wo-modal').classList.remove('hide');
+    el.querySelector('#start-log').dataset.tmplId=tmpl.id;
+    el.querySelector('#wo-cat').value=tmpl.categoryId||'';
+    window._tmplForFitness=tmpl;
+  }));
+  el.querySelectorAll('[data-del-sess]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Delete workout?'))return;await DB.del('workoutSessions',b.dataset.delSess);renderFitness(el);
+  }));
+  el.querySelectorAll('[data-del-tmpl]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Delete template?'))return;await DB.del('workoutTemplates',b.dataset.delTmpl);renderFitness(el);
+  }));
+  bindWorkoutModal(el,cats,bands,records,sessions,templates);
+  bindTemplateModal(el,cats);
+}
+
+function tmplCard(t,cm){const cat=cm[t.categoryId];
+  return`<div class="card tmpl"><div class="tmpl-info"><div class="ttl">${t.name}</div>
+    <div class="meta">${t.exercises?.length||0} exercises ${pillHtml(cat)}</div></div>
+    <div style="display:flex;gap:8px"><button class="bsm" data-use-tmpl="${t.id}">Use</button>
+    <button class="del" data-del-tmpl="${t.id}">🗑</button></div></div>`;}
+
+function sessCard(s,cm){const cat=cm[s.categoryId];
+  const exs=s.exercises||[];
+  return`<div class="card" style="position:relative;margin-bottom:12px">
+    <button class="del" data-del-sess="${s.id}" style="position:absolute;top:10px;right:0">🗑</button>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div><div class="ttl">${fmtDate(s.date)}</div>
+        <div class="meta">${s.durationMinutes?`⏱ ${s.durationMinutes}m`:''}${pillHtml(cat)}</div></div>
+      <div style="display:flex;gap:5px">${s.willingnessRating?`<span style="font-size:.75rem;padding:4px 10px;background:#fdf0f0;border-radius:999px;font-weight:600">🔋${s.willingnessRating}</span>`:''}
+        ${s.exertionRating?`<span style="font-size:.75rem;padding:4px 10px;background:#fdf0f0;border-radius:999px;font-weight:600">🔥${s.exertionRating}</span>`:''}</div>
+    </div>
+    ${exs.slice(0,3).map(e=>`<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:4px 0;border-bottom:1px solid var(--blush)"><span style="color:var(--mauve);font-weight:500">${e.name}</span><span style="color:var(--sub)">${e.sets?.length||0} sets</span></div>`).join('')}
+    ${exs.length>3?`<div class="note">+ ${exs.length-3} more</div>`:''}
+  </div>`;}
+
+function buildHeatmap(sessions,cats){
+  const cm=catMap(cats);const today=new Date();
+  const mon=new Date(today);mon.setDate(today.getDate()-((today.getDay()+6)%7));
+  const start=new Date(mon);start.setDate(start.getDate()-63);
+  const cells=[];
+  for(let d=new Date(start);d<=today;d.setDate(d.getDate()+1)){
+    const k=d.toDateString();
+    const ds=sessions.filter(s=>new Date(s.date).toDateString()===k);
+    const cat=ds.length>0&&ds[0].categoryId?cm[ds[0].categoryId]:null;
+    const bg=ds.length>0?(cat?cat.colorHex:'var(--mauve)'):'var(--blush)';
+    const op=ds.length>0?1:.35;
+    cells.push(`<div class="hc" style="background:${bg};opacity:${op}" title="${new Date(d).toLocaleDateString()}"></div>`);
+  }
+  return cells.join('');
+}
+
+// Workout modal
+let woStart,woPauseStart,woTotalPaused=0,woIsPaused=false,woInterval,woSecs=0;
+
+function workoutModal(cats,bands){
+  return`<div class="overlay hide" id="wo-modal">
+  <div class="modal" style="max-height:92vh">
+    <div class="mhd"><h3 id="wo-title">New Workout</h3><button class="mclose" id="wo-close">✕</button></div>
+    <div id="wo-pre" class="mscroll">
+      <div class="fg"><label>Category</label><select id="wo-cat" class="inp">
+        <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+      <div class="fg"><label>Willingness: <span id="will-v">5</span>/10</label>
+        <input type="range" id="will-sl" class="slider" min="1" max="10" value="5">
+        <div class="sl-lbl"><span>😴</span><span>💪</span></div></div>
+      <div style="margin-bottom:8px"><button class="btn" id="start-log">Start Workout ▶</button></div>
+    </div>
+    <div id="wo-active" class="hide">
+      <div class="ebar">
+        <span class="timer" id="wo-timer">00:00</span>
+        <button id="wo-pause" style="font-size:1.5rem;background:none;border:none;cursor:pointer;color:var(--mauve)">⏸</button>
+        <span id="wo-paused" class="hide" style="font-size:.8rem;color:var(--sub);background:var(--blush);padding:3px 10px;border-radius:999px">Paused</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:0 20px">
+        <div id="wo-exs"></div>
+        <button class="btn2" id="wo-add-ex" style="width:100%;margin-bottom:8px">+ Add Exercise</button>
+        <button class="btn" id="wo-finish">Finish Workout</button>
+      </div>
+    </div>
+    <div id="wo-post" class="hide">
+      <div class="mscroll">
+        <div class="card" style="text-align:center;margin-bottom:16px">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--deep)" id="dur-disp">00:00</div>
+          <div style="font-size:.75rem;color:var(--sub)">Active Time</div>
+        </div>
+        <div class="fg"><label>Exertion: <span id="exert-v">5</span>/10</label>
+          <input type="range" id="exert-sl" class="slider" min="1" max="10" value="5">
+          <div class="sl-lbl"><span>😌</span><span>🫠</span></div></div>
+        <div class="fg"><label>Notes</label><textarea id="wo-notes" class="inp" rows="2" placeholder="How did it go?"></textarea></div>
+        <div class="fg"><label><input type="checkbox" id="save-tmpl"> Save as template</label></div>
+        <div class="fg hide" id="tmpl-name-g"><label>Template name</label><input type="text" id="tmpl-name" class="inp" placeholder="e.g. Push Day"></div>
+        <div style="margin-bottom:8px"><button class="btn" id="wo-save">Save Workout</button></div>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+function bindWorkoutModal(el,cats,bands,records,sessions,templates){
+  const modal=el.querySelector('#wo-modal');
+  el.querySelector('#wo-close')?.addEventListener('click',()=>{clearInterval(woInterval);modal.classList.add('hide');resetWo(el)});
+  el.querySelector('#will-sl')?.addEventListener('input',e=>{el.querySelector('#will-v').textContent=e.target.value});
+  el.querySelector('#start-log')?.addEventListener('click',()=>{
+    el.querySelector('#wo-pre').classList.add('hide');
+    el.querySelector('#wo-active').classList.remove('hide');
+    woStart=Date.now();woTotalPaused=0;woSecs=0;woIsPaused=false;
+    const tmpl=window._tmplForFitness;
+    if(tmpl){tmpl.exercises?.forEach(ex=>addExCard(el.querySelector('#wo-exs'),bands,ex));}
+    window._tmplForFitness=null;
+    woInterval=setInterval(()=>{if(!woIsPaused){woSecs=Math.floor((Date.now()-woStart-woTotalPaused)/1000);el.querySelector('#wo-timer').textContent=fmt(woSecs)}},1000);
+  });
+  el.querySelector('#wo-pause')?.addEventListener('click',()=>{
+    if(!woIsPaused){woIsPaused=true;woPauseStart=Date.now();el.querySelector('#wo-pause').textContent='▶';el.querySelector('#wo-paused').classList.remove('hide')}
+    else{woTotalPaused+=Date.now()-woPauseStart;woIsPaused=false;el.querySelector('#wo-pause').textContent='⏸';el.querySelector('#wo-paused').classList.add('hide')}
+  });
+  el.querySelector('#wo-add-ex')?.addEventListener('click',()=>addExCard(el.querySelector('#wo-exs'),bands));
+  el.querySelector('#wo-finish')?.addEventListener('click',()=>{
+    clearInterval(woInterval);
+    el.querySelector('#wo-active').classList.add('hide');
+    el.querySelector('#wo-post').classList.remove('hide');
+    el.querySelector('#dur-disp').textContent=fmt(woSecs);
+    el.querySelector('#wo-save').dataset.secs=woSecs;
+  });
+  el.querySelector('#exert-sl')?.addEventListener('input',e=>{el.querySelector('#exert-v').textContent=e.target.value});
+  el.querySelector('#save-tmpl')?.addEventListener('change',e=>{el.querySelector('#tmpl-name-g').classList.toggle('hide',!e.target.checked)});
+  el.querySelector('#wo-save')?.addEventListener('click',async()=>{
+    const secs=parseInt(el.querySelector('#wo-save').dataset.secs||0);
+    const sess={id:uid(),date:ts(),durationMinutes:Math.floor(secs/60),
+      categoryId:el.querySelector('#wo-cat').value||null,
+      willingnessRating:parseInt(el.querySelector('#will-sl').value),
+      exertionRating:parseInt(el.querySelector('#exert-sl').value),
+      notes:el.querySelector('#wo-notes').value,exercises:exerciseList.map(e=>({id:e.id,name:e.name,isBand:e.isBand,sets:e.sets}))};
+    await DB.put('workoutSessions',sess);
+    for(const ex of exerciseList.filter(e=>!e.isBand)){
+      const best=ex.sets.filter(s=>!s.isWarmup).sort((a,b)=>b.weight-a.weight)[0];
+      if(best&&best.weight>0){
+        const existing=records.find(r=>r.exerciseName===ex.name.toLowerCase());
+        if(!existing||best.weight>existing.weight)
+          await DB.put('personalRecords',{id:uid(),exerciseName:ex.name.toLowerCase(),weight:best.weight,reps:best.reps,unit:best.unit,achievedAt:ts(),sessionId:sess.id});
+      }
+    }
+    if(el.querySelector('#save-tmpl').checked){
+      const tn=el.querySelector('#tmpl-name').value.trim();
+      if(tn)await DB.put('workoutTemplates',{id:uid(),name:tn,categoryId:sess.categoryId,exercises:exerciseList.map(e=>({name:e.name,isBand:e.isBand,sets:e.sets.map(s=>({reps:s.reps,weight:s.weight,unit:s.unit}))})),createdAt:ts()});
+    }
+    modal.classList.add('hide');resetWo(el);renderFitness(el);
+  });
+}
+
+function resetWo(el){exerciseList=[];clearInterval(woInterval);
+  ['#wo-pre','#wo-active','#wo-post'].forEach((s,i)=>{el.querySelector(s)?.classList.toggle('hide',i!==0)});
+  const exs=el.querySelector('#wo-exs');if(exs)exs.innerHTML='';
+}
+
+function addExCard(container,bands,prefill=null){
+  const id=uid();
+  const ex={id,name:prefill?.name||'',isBand:prefill?.isBand||false,
+    sets:prefill?.sets?.map(s=>({id:uid(),reps:s.reps||10,weight:s.weight||0,unit:s.unit||'kg',isWarmup:false,bandId:null}))||
+      [{id:uid(),reps:10,weight:0,unit:'kg',isWarmup:false,bandId:null},
+       {id:uid(),reps:10,weight:0,unit:'kg',isWarmup:false,bandId:null},
+       {id:uid(),reps:10,weight:0,unit:'kg',isWarmup:false,bandId:null}]};
+  exerciseList.push(ex);
+  const div=document.createElement('div');div.className='excard';div.dataset.exid=id;
+  div.innerHTML=renderExCard(ex,bands);container.appendChild(div);
+  bindExCard(div,ex,bands);
+}
+
+function renderExCard(ex,bands){
+  return`<div class="exhd">
+    <input type="text" class="inp ex-name" style="flex:1;min-width:120px" placeholder="Exercise name" value="${ex.name}">
+    <div class="tgg"><button class="tgb${!ex.isBand?' on':''}" data-mode="weight">Weight</button>
+      <button class="tgb${ex.isBand?' on':''}" data-mode="band">Band</button></div>
+    <button style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:.4" class="ex-del">🗑</button>
   </div>
+  <div class="sets-c">${ex.sets.map(s=>renderSetRow(s,ex.isBand,bands)).join('')}</div>
+  <button class="add-set">+ Add Set</button>`;
+}
 
-  <script type="module" src="js/app.js"></script>
+function renderSetRow(set,isBand,bands){
+  return`<div class="set-row" data-sid="${set.id}">
+    <button class="wb${set.isWarmup?' on':''}" data-wb="${set.id}">W</button>
+    <div class="rc"><button class="rb minus" data-sid="${set.id}">−</button>
+      <span class="rv">${set.reps}</span>
+      <button class="rb plus" data-sid="${set.id}">+</button>
+      <span style="font-size:.72rem;color:var(--sub)">reps</span></div>
+    ${isBand?`<div class="bd-pick">${bands.map(b=>`<button class="bd${set.bandId===b.id?' on':''}" style="background:${b.colorHex}" data-bid="${b.id}" title="${b.name}"></button>`).join('')}</div>`
+    :`<div class="wc"><input type="number" class="inp wi" value="${set.weight}" min="0" step=".5">
+      <button class="ut">${set.unit}</button></div>`}
+    <button style="background:none;border:none;cursor:pointer;opacity:.4;font-size:.85rem" data-del-set="${set.id}">✕</button>
+  </div>`;}
+
+function bindExCard(div,ex,bands){
+  div.querySelector('.ex-name').addEventListener('input',e=>{ex.name=e.target.value});
+  div.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+    ex.isBand=b.dataset.mode==='band';div.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x===b));
+    div.querySelector('.sets-c').innerHTML=ex.sets.map(s=>renderSetRow(s,ex.isBand,bands)).join('');
+    bindSetRows(div,ex,bands);
+  }));
+  div.querySelector('.ex-del').addEventListener('click',()=>{exerciseList=exerciseList.filter(e=>e.id!==ex.id);div.remove()});
+  div.querySelector('.add-set').addEventListener('click',()=>{
+    const last=ex.sets[ex.sets.length-1];
+    const s={id:uid(),reps:last?.reps||10,weight:last?.weight||0,unit:last?.unit||'kg',isWarmup:false,bandId:null};
+    ex.sets.push(s);
+    const row=document.createElement('div');row.innerHTML=renderSetRow(s,ex.isBand,bands);
+    div.querySelector('.sets-c').appendChild(row.firstElementChild);
+    bindSetRows(div,ex,bands);
+  });
+  bindSetRows(div,ex,bands);
+}
+
+function bindSetRows(div,ex,bands){
+  div.querySelectorAll('.minus,.plus').forEach(b=>b.addEventListener('click',()=>{
+    const s=ex.sets.find(x=>x.id===b.dataset.sid);if(!s)return;
+    if(b.classList.contains('plus'))s.reps++;else if(s.reps>1)s.reps--;
+    b.closest('.rc').querySelector('.rv').textContent=s.reps;
+  }));
+  div.querySelectorAll('.wi').forEach(inp=>inp.addEventListener('input',e=>{
+    const s=ex.sets.find(x=>x.id===e.target.closest('.set-row').dataset.sid);
+    if(s)s.weight=parseFloat(e.target.value)||0;
+  }));
+  div.querySelectorAll('.ut').forEach(b=>b.addEventListener('click',()=>{
+    const s=ex.sets.find(x=>x.id===b.closest('.set-row').dataset.sid);
+    if(s){s.unit=s.unit==='kg'?'lbs':'kg';b.textContent=s.unit}
+  }));
+  div.querySelectorAll('.wb').forEach(b=>b.addEventListener('click',()=>{
+    const s=ex.sets.find(x=>x.id===b.dataset.wb);
+    if(s){s.isWarmup=!s.isWarmup;b.classList.toggle('on',s.isWarmup)}
+  }));
+  div.querySelectorAll('.bd').forEach(b=>b.addEventListener('click',()=>{
+    const row=b.closest('.set-row');const s=ex.sets.find(x=>x.id===row.dataset.sid);
+    if(s){s.bandId=s.bandId===b.dataset.bid?null:b.dataset.bid;
+      row.querySelectorAll('.bd').forEach(x=>x.classList.toggle('on',x.dataset.bid===s.bandId))}
+  }));
+  div.querySelectorAll('[data-del-set]').forEach(b=>b.addEventListener('click',()=>{
+    const sid=b.dataset.delSet;ex.sets=ex.sets.filter(s=>s.id!==sid);b.closest('.set-row').remove();
+  }));
+}
+
+function templateModal(cats){
+  return`<div class="overlay hide" id="tmpl-modal">
+  <div class="modal"><div class="mhd"><h3>New Template</h3><button class="mclose" id="tmpl-close">✕</button></div>
+  <div class="mscroll">
+    <div class="fg"><label>Template Name *</label><input type="text" id="tmpl-title" class="inp" autocomplete="off"></div>
+    <div class="fg"><label>Category</label><select id="tmpl-cat" class="inp">
+      <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+    <div id="tmpl-exs"></div>
+    <button class="btn2" id="tmpl-add-ex" style="width:100%;margin-bottom:8px">+ Add Exercise</button>
+  </div>
+  <div class="mfoot"><button class="btn" id="tmpl-save">Save Template</button></div></div></div>`;}
+
+function bindTemplateModal(el,cats){
+  el.querySelector('#tmpl-close')?.addEventListener('click',()=>el.querySelector('#tmpl-modal').classList.add('hide'));
+  el.querySelector('#tmpl-add-ex')?.addEventListener('click',()=>{
+    const div=document.createElement('div');
+    div.innerHTML=`<div class="excard" style="margin-bottom:10px">
+      <input type="text" class="inp tmpl-ex-name" placeholder="Exercise name" style="margin-bottom:8px">
+      <div style="display:flex;gap:8px">
+        <div class="fg" style="flex:1"><label>Sets</label><input type="number" class="inp tmpl-sets" value="3" min="1"></div>
+        <div class="fg" style="flex:1"><label>Reps</label><input type="number" class="inp tmpl-reps" value="10" min="1"></div>
+      </div></div>`;
+    el.querySelector('#tmpl-exs').appendChild(div.firstElementChild);
+  });
+  el.querySelector('#tmpl-save')?.addEventListener('click',async()=>{
+    const name=el.querySelector('#tmpl-title').value.trim();if(!name)return;
+    const exCards=el.querySelectorAll('#tmpl-exs .excard');
+    const exercises=Array.from(exCards).map(c=>({
+      name:c.querySelector('.tmpl-ex-name').value,isBand:false,
+      sets:Array.from({length:parseInt(c.querySelector('.tmpl-sets').value)||3},()=>({reps:parseInt(c.querySelector('.tmpl-reps').value)||10,weight:0,unit:'kg'}))
+    }));
+    await DB.put('workoutTemplates',{id:uid(),name,categoryId:el.querySelector('#tmpl-cat').value||null,exercises,createdAt:ts()});
+    el.querySelector('#tmpl-modal').classList.add('hide');renderFitness(el);
+  });
+}
+
+function recapModal(){
+  return`<div class="overlay hide" id="recap-modal">
+  <div class="modal"><div class="mhd"><h3>Monthly Recap</h3><button class="mclose" id="recap-close">✕</button></div>
+  <div class="mscroll" id="recap-content"></div></div></div>`;}
+
+async function showRecap(el){
+  el.querySelector('#recap-modal').classList.remove('hide');
+  el.querySelector('#recap-close')?.addEventListener('click',()=>el.querySelector('#recap-modal').classList.add('hide'));
+  const[symptoms,sessions,periods]=await Promise.all([DB.all('symptomLogs'),DB.all('workoutSessions'),DB.all('periodEntries')]);
+  const now=new Date();
+  const ms=symptoms.filter(s=>{const d=new Date(s.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  const mss=sessions.filter(s=>{const d=new Date(s.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  const avgP=ms.length?(ms.reduce((s,l)=>s+l.painScore,0)/ms.length).toFixed(1):'—';
+  const c=el.querySelector('#recap-content');
+  c.innerHTML=`
+    <div style="display:flex;gap:12px;margin-bottom:16px">
+      <div class="stat"><div class="sv">${mss.length}</div><div class="sl">Workouts</div></div>
+      <div class="stat"><div class="sv">${ms.length}</div><div class="sl">Symptom Logs</div></div>
+      <div class="stat"><div class="sv">${avgP}</div><div class="sl">Avg Pain</div></div>
+    </div>
+    ${ms.length===0?'<p class="empty">No symptoms logged this month.<br>Log from the calendar or after a workout.</p>':
+      ['knees','back','leftShoulder','rightShoulder'].map(area=>{
+        const al=ms.filter(s=>s.bodyArea===area);if(!al.length)return'';
+        const aAvg=(al.reduce((s,l)=>s+l.painScore,0)/al.length).toFixed(1);
+        const aLabel={knees:'Knees 🦵',back:'Back 🧍',leftShoulder:'Left Shoulder ◀️',rightShoulder:'Right Shoulder ▶️'}[area];
+        const bars=al.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(l=>{
+          const h=Math.round(l.painScore/10*60);
+          const col=l.painScore<=3?'#4caf50':l.painScore<=5?'#ff9800':'#f44336';
+          return`<div class="bc"><div class="bar" style="height:${h}px;background:${col};min-width:16px" title="${l.painScore}/10"></div>
+            <div class="bl">${new Date(l.date).getDate()}</div></div>`;
+        }).join('');
+        const wDays=new Set(mss.map(s=>new Date(s.date).toDateString()));
+        const wl=al.filter(l=>wDays.has(new Date(l.date).toDateString()));
+        const nwl=al.filter(l=>!wDays.has(new Date(l.date).toDateString()));
+        const insights=[];
+        if(wl.length&&nwl.length){const wa=wl.reduce((s,l)=>s+l.painScore,0)/wl.length;const nwa=nwl.reduce((s,l)=>s+l.painScore,0)/nwl.length;
+          if(wa-nwa>=1)insights.push(`Pain tends higher on workout days (avg ${wa.toFixed(1)} vs ${nwa.toFixed(1)})`);
+          else if(nwa-wa>=1)insights.push('Pain is lower on workout days — movement may be helping!');}
+        const sorted=al.sort((a,b)=>new Date(a.date)-new Date(b.date));
+        if(sorted.length>=4){const mid=Math.floor(sorted.length/2);
+          const f=sorted.slice(0,mid).reduce((s,l)=>s+l.painScore,0)/mid;
+          const s2=sorted.slice(mid).reduce((s,l)=>s+l.painScore,0)/(sorted.length-mid);
+          if(f-s2>=1)insights.push('Pain is trending better this month 📈');
+          else if(s2-f>=1)insights.push('Pain has been increasing — check with your PT');
+          else insights.push('Pain has been consistent this month');}
+        return`<div class="card" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div><div class="ttl">${aLabel}</div><div class="meta">Avg ${aAvg}/10 · ${al.length} logs</div></div></div>
+          <div class="bar-chart">${bars}</div>
+          ${insights.length?`<div style="border-top:1px solid var(--blush);padding-top:10px">${insights.map(i=>`<div class="insight">💡 ${i}</div>`).join('')}</div>`:''}
+        </div>`;
+      }).join('')}`;
+}
+
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  if(h>0)return`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
+
+// ═══════════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════════
+async function renderCalendar(el){
+  const[tasks,cats,periods,symptoms]=await Promise.all([DB.all('tasks'),DB.all('categories'),DB.all('periodEntries'),DB.all('symptomLogs')]);
+  const cm=catMap(cats);
+  let viewMode='month',displayDate=new Date();
+
+  function render(){
+    const wStart=getWkStart(displayDate);
+    const wEnd=new Date(wStart);wEnd.setDate(wStart.getDate()+6);
+    const fmtS=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    el.innerHTML=`
+      <div class="page-hd" style="flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <button style="background:none;border:none;font-size:1.6rem;color:var(--mauve);cursor:pointer" id="cal-prev">‹</button>
+          <h1 style="font-size:1.3rem" id="cal-title">${viewMode==='month'?displayDate.toLocaleDateString('en-US',{month:'long',year:'numeric'}):fmtS(wStart)+' – '+fmtS(wEnd)}</h1>
+          <button style="background:none;border:none;font-size:1.6rem;color:var(--mauve);cursor:pointer" id="cal-next">›</button>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="bsm${viewMode==='month'?' on':''}" id="cal-m">Month</button>
+          <button class="bsm${viewMode==='week'?' on':''}" id="cal-w">Week</button>
+          <button class="bsm" id="cal-today">Today</button>
+        </div>
+      </div>
+      <div id="cal-body">${viewMode==='month'?renderMonth():renderWeek(wStart)}</div>
+      <div id="day-detail" class="hide day-detail"></div>
+      ${periodModal2()}${symptomModal2()}${eventModal2()}`;
+    el.querySelector('#cal-prev').addEventListener('click',()=>{
+      if(viewMode==='month'){displayDate=new Date(displayDate.getFullYear(),displayDate.getMonth()-1,1)}
+      else{displayDate=new Date(displayDate);displayDate.setDate(displayDate.getDate()-7)}
+      render();
+    });
+    el.querySelector('#cal-next').addEventListener('click',()=>{
+      if(viewMode==='month'){displayDate=new Date(displayDate.getFullYear(),displayDate.getMonth()+1,1)}
+      else{displayDate=new Date(displayDate);displayDate.setDate(displayDate.getDate()+7)}
+      render();
+    });
+    el.querySelector('#cal-today').addEventListener('click',()=>{displayDate=new Date();render()});
+    el.querySelector('#cal-m').addEventListener('click',()=>{viewMode='month';render()});
+    el.querySelector('#cal-w').addEventListener('click',()=>{viewMode='week';render()});
+    el.querySelectorAll('.cal-cell:not(.empty)').forEach(cell=>cell.addEventListener('click',()=>showDay(el,new Date(cell.dataset.date),tasks,cm,periods,symptoms)));
+    bindCalModals(el,tasks,render);
+  }
+
+  function renderMonth(){
+    const y=displayDate.getFullYear(),mo=displayDate.getMonth();
+    const first=new Date(y,mo,1),last=new Date(y,mo+1,0);
+    const offset=(first.getDay()+6)%7;
+    let html=`<div class="cal-grid-hd">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="cal-dl">${d}</div>`).join('')}</div>
+      <div class="cal-grid">`;
+    for(let i=0;i<offset;i++)html+=`<div class="cal-cell empty"></div>`;
+    for(let day=1;day<=last.getDate();day++){
+      const d=new Date(y,mo,day);const today=d.toDateString()===new Date().toDateString();
+      const isPd=periods.some(p=>{const s=new Date(p.startDate);s.setHours(0,0,0,0);const e=p.endDate?new Date(p.endDate):new Date();e.setHours(23,59,59,999);return d>=s&&d<=e});
+      const dtasks=tasks.filter(t=>t.completedAt&&new Date(t.completedAt).toDateString()===d.toDateString());
+      const dsymp=symptoms.filter(s=>new Date(s.date).toDateString()===d.toDateString());
+      const highPain=dsymp.some(s=>s.painScore>=6);
+      const dots=[...new Set(dtasks.map(t=>cm[t.categoryId]?.colorHex||'var(--mauve)'))].slice(0,3);
+      html+=`<div class="cal-cell${today?' today':''}${isPd?' pd':''}" data-date="${d.toISOString()}">
+        <div class="${today?'today-num':'cal-num'}">${day}</div>
+        <div class="dots">${dots.map(c=>`<span class="dot" style="background:${c}"></span>`).join('')}${highPain?'<span class="pain-dot"></span>':''}</div>
+      </div>`;
+    }
+    return html+'</div>';
+  }
+
+  function renderWeek(wStart){
+    const days=Array.from({length:7},(_,i)=>{const d=new Date(wStart);d.setDate(wStart.getDate()+i);return d});
+    const hours=Array.from({length:17},(_,i)=>i+6);
+    const isPd=d=>periods.some(p=>{const s=new Date(p.startDate);s.setHours(0,0,0,0);const e=p.endDate?new Date(p.endDate):new Date();e.setHours(23,59,59,999);return d>=s&&d<=e});
+    let html=`<div class="wg"><div class="wg-hrow"><div class="wg-tc"></div>`;
+    days.forEach(d=>{const isT=d.toDateString()===new Date().toDateString();
+      html+=`<div class="wg-dh${isT?' wg-today':''}${isPd(d)?' wg-pd':''}">
+        <div>${d.toLocaleDateString('en-US',{weekday:'short'})}</div>
+        <div style="font-weight:700">${d.getDate()}</div>
+        ${isPd(d)?'<div style="height:3px;background:#e91e63;border-radius:2px;margin:2px 4px 0"></div>':''}
+      </div>`;
+    });
+    html+='</div>';
+    hours.forEach(h=>{
+      const ampm=h<12?'am':(h===12?'pm':'pm');const hd=h===12?12:(h>12?h-12:h);
+      html+=`<div class="wg-row"><div class="wg-tc">${hd}${ampm}</div>`;
+      days.forEach(d=>{const isT=d.toDateString()===new Date().toDateString();
+        html+=`<div class="wg-cell${isT?' wg-today':''}${isPd(d)?' wg-pd':''}"></div>`;});
+      html+='</div>';
+    });
+    html+='</div>';return html;
+  }
+
+  render();
+}
+
+function getWkStart(date){const d=new Date(date);d.setDate(d.getDate()-((d.getDay()+6)%7));d.setHours(0,0,0,0);return d;}
+
+function showDay(el,date,tasks,cm,periods,symptoms){
+  const ds=date.toDateString();
+  const dtasks=tasks.filter(t=>t.completedAt&&new Date(t.completedAt).toDateString()===ds);
+  const dsymp=symptoms.filter(s=>new Date(s.date).toDateString()===ds);
+  const isPd=periods.some(p=>{const s=new Date(p.startDate);s.setHours(0,0,0,0);const e=p.endDate?new Date(p.endDate):new Date();e.setHours(23,59,59,999);return date>=s&&date<=e});
+  const dd=el.querySelector('#day-detail');
+  dd.classList.remove('hide');
+  dd.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+    <h3 style="font-size:1rem;font-weight:700;color:var(--deep)">${date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</h3>
+    ${isPd?'<span class="period-chip">🩸 Period</span>':''}
+  </div>
+  <div class="day-actions">
+    <button class="bsm" id="dd-task" data-date="${date.toISOString()}">+ Task</button>
+    <button class="bsm" id="dd-period" data-date="${date.toISOString()}">🩸 Period</button>
+    <button class="bsm" id="dd-symptom" data-date="${date.toISOString()}">🩺 Symptoms</button>
+  </div>
+  ${dtasks.length?`<div class="lbl">Completed Tasks</div>${dtasks.map(t=>`<div class="di">✓ <span>${t.title}</span>${pillHtml(cm[t.categoryId])}</div>`).join('')}`:''}
+  ${dsymp.length?`<div class="lbl" style="margin-top:10px">Symptoms</div>${dsymp.map(s=>{
+    const aLabel={knees:'Knees',back:'Back',leftShoulder:'Left Shoulder',rightShoulder:'Right Shoulder'}[s.bodyArea]||s.bodyArea;
+    const lvl=s.painScore<=3?'lo':s.painScore<=5?'md':'hi';
+    return`<div class="di"><span>${aLabel}</span><span class="pb ${lvl}">${s.painScore}/10</span></div>`;
+  }).join('')}`:''}
+  ${!dtasks.length&&!dsymp.length?'<p class="empty">Nothing on this day</p>':''}`;
+
+  dd.querySelector('#dd-task')?.addEventListener('click',()=>{
+    const m=el.querySelector('#ev-modal');m.classList.remove('hide');
+    el.querySelector('#ev-date').value=date.toISOString().slice(0,10);
+  });
+  dd.querySelector('#dd-period')?.addEventListener('click',()=>{
+    const m=el.querySelector('#pd-modal');m.classList.remove('hide');
+    el.querySelector('#pd-start').value=date.toISOString().slice(0,10);
+  });
+  dd.querySelector('#dd-symptom')?.addEventListener('click',()=>{
+    const m=el.querySelector('#sy-modal');m.classList.remove('hide');
+    el.querySelector('#sy-date').value=date.toISOString().slice(0,10);
+  });
+}
+
+function periodModal2(){return`<div class="overlay hide" id="pd-modal">
+  <div class="modal"><div class="mhd"><h3>Log Period</h3><button class="mclose" id="pd-close">✕</button></div>
+  <div class="mscroll">
+    <div class="fg"><label>Start Date</label><input type="date" id="pd-start" class="inp"></div>
+    <div class="fg"><label><input type="checkbox" id="pd-ongoing" checked> Still ongoing</label></div>
+    <div class="fg hide" id="pd-end-g"><label>End Date</label><input type="date" id="pd-end" class="inp"></div>
+    <div class="fg"><label>Notes</label><input type="text" id="pd-notes" class="inp" placeholder="Optional"></div>
+  </div>
+  <div class="mfoot"><button class="btn" id="pd-save">Save</button></div></div></div>`;}
+
+function symptomModal2(){return`<div class="overlay hide" id="sy-modal">
+  <div class="modal"><div class="mhd"><h3>Log Symptoms</h3><button class="mclose" id="sy-close">✕</button></div>
+  <div class="mscroll">
+    <div class="fg"><label>Date</label><input type="date" id="sy-date" class="inp"></div>
+    <div class="fg"><label>Body Area</label><select id="sy-area" class="inp">
+      <option value="knees">Knees</option><option value="back">Back</option>
+      <option value="leftShoulder">Left Shoulder</option><option value="rightShoulder">Right Shoulder</option>
+    </select></div>
+    <div class="fg"><label>Pain Score: <span id="sy-pv">5</span>/10</label>
+      <input type="range" id="sy-ps" class="slider" min="1" max="10" value="5">
+      <div class="sl-lbl"><span>🟢 1</span><span>🔴 10</span></div></div>
+    <div class="fg"><label>Notes</label><input type="text" id="sy-notes" class="inp" placeholder="Optional"></div>
+  </div>
+  <div class="mfoot"><button class="btn" id="sy-save">Save</button></div></div></div>`;}
+
+function eventModal2(){return`<div class="overlay hide" id="ev-modal">
+  <div class="modal"><div class="mhd"><h3>New Task</h3><button class="mclose" id="ev-close">✕</button></div>
+  <div class="mscroll">
+    <div class="fg"><label>Title *</label><input type="text" id="ev-title" class="inp" autocomplete="off"></div>
+    <div class="fg"><label>Date</label><input type="date" id="ev-date" class="inp"></div>
+  </div>
+  <div class="mfoot"><button class="btn" id="ev-save">Add Task</button></div></div></div>`;}
+
+function bindCalModals(el,tasks,refresh){
+  el.querySelector('#pd-close')?.addEventListener('click',()=>el.querySelector('#pd-modal').classList.add('hide'));
+  el.querySelector('#sy-close')?.addEventListener('click',()=>el.querySelector('#sy-modal').classList.add('hide'));
+  el.querySelector('#ev-close')?.addEventListener('click',()=>el.querySelector('#ev-modal').classList.add('hide'));
+  el.querySelector('#pd-ongoing')?.addEventListener('change',e=>{el.querySelector('#pd-end-g').classList.toggle('hide',e.target.checked)});
+  el.querySelector('#sy-ps')?.addEventListener('input',e=>{el.querySelector('#sy-pv').textContent=e.target.value});
+  el.querySelector('#pd-save')?.addEventListener('click',async()=>{
+    const sv=el.querySelector('#pd-start').value;if(!sv)return;
+    const ongoing=el.querySelector('#pd-ongoing').checked;
+    await DB.put('periodEntries',{id:uid(),startDate:new Date(sv).toISOString(),
+      endDate:ongoing?null:(el.querySelector('#pd-end').value?new Date(el.querySelector('#pd-end').value).toISOString():null),
+      notes:el.querySelector('#pd-notes').value,createdAt:ts()});
+    el.querySelector('#pd-modal').classList.add('hide');refresh();
+  });
+  el.querySelector('#sy-save')?.addEventListener('click',async()=>{
+    const dv=el.querySelector('#sy-date').value;if(!dv)return;
+    await DB.put('symptomLogs',{id:uid(),date:new Date(dv).toISOString(),
+      bodyArea:el.querySelector('#sy-area').value,
+      painScore:parseInt(el.querySelector('#sy-ps').value),
+      notes:el.querySelector('#sy-notes').value,createdAt:ts()});
+    el.querySelector('#sy-modal').classList.add('hide');refresh();
+  });
+  el.querySelector('#ev-save')?.addEventListener('click',async()=>{
+    const title=el.querySelector('#ev-title').value.trim();if(!title)return;
+    await DB.put('tasks',{id:uid(),title,taskType:'daily',
+      dueDate:el.querySelector('#ev-date').value||null,
+      isCompleted:false,priority:'none',createdAt:ts()});
+    el.querySelector('#ev-modal').classList.add('hide');refresh();
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+async function renderSettings(el){
+  const[cats,bands,theme]=await Promise.all([DB.all('categories'),DB.all('resistanceBands'),DB.get('settings','theme')]);
+  el.innerHTML=`
+    <div class="page-hd"><h1>Settings</h1></div>
+    <div class="lbl">Appearance</div>
+    <div class="scard" style="margin-bottom:24px">
+      <div class="srow"><span>App Theme Color</span>
+        <input type="color" class="cw" id="theme-col" value="${theme?.baseColor||'#C97B8A'}"></div>
+      <div style="display:flex;justify-content:space-around;padding:14px 16px;border-top:1px solid var(--blush)" id="palette">
+        ${['--mauve','--deep','--rose','--blush','--lt'].map((v,i)=>`<div style="text-align:center">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(${v});box-shadow:0 2px 6px rgba(0,0,0,.1);margin:0 auto 4px"></div>
+          <div style="font-size:.6rem;color:var(--sub)">${['Mauve','Deep','Rose','Blush','Light'][i]}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="lbl">Categories</div>
+    <div class="scard" style="margin-bottom:24px" id="cats-card">
+      ${cats.map(c=>catRow(c)).join('')}
+      <div class="srow"><button class="btn2" id="add-cat-btn" style="width:100%">+ Add Category</button></div>
+    </div>
+    <div class="lbl">Resistance Bands</div>
+    <div class="scard" style="margin-bottom:24px" id="bands-card">
+      ${bands.length?bands.map(b=>bandRow(b)).join(''):'<div class="srow" style="color:var(--sub);font-size:.9rem">No bands yet</div>'}
+      <div class="srow"><button class="btn2" id="add-band-btn" style="width:100%">+ Add Band</button></div>
+    </div>
+    <div class="lbl">About</div>
+    <div class="scard">
+      <div class="srow"><span>🌸 Bloom Planner</span><span class="muted">v1.0 PWA</span></div>
+      <div class="srow"><span>Data stored locally</span><span class="muted">IndexedDB</span></div>
+    </div>
+    ${addCatModal()}${addBandModal()}`;
+
+  let thTo;
+  el.querySelector('#theme-col')?.addEventListener('input',async e=>{
+    clearTimeout(thTo);thTo=setTimeout(async()=>{await applyTheme(e.target.value);el.querySelector('#palette').innerHTML=
+      ['--mauve','--deep','--rose','--blush','--lt'].map((v,i)=>`<div style="text-align:center">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(${v});box-shadow:0 2px 6px rgba(0,0,0,.1);margin:0 auto 4px"></div>
+        <div style="font-size:.6rem;color:var(--sub)">${['Mauve','Deep','Rose','Blush','Light'][i]}</div>
+      </div>`).join('');
+    },200);
+  });
+
+  el.querySelectorAll('[data-del-cat]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Delete category?'))return;await DB.del('categories',b.dataset.delCat);renderSettings(el);
+  }));
+  el.querySelectorAll('[data-recolor]').forEach(inp=>inp.addEventListener('change',async e=>{
+    const c=cats.find(x=>x.id===e.target.dataset.recolor);if(c){c.colorHex=e.target.value;await DB.put('categories',c);}
+  }));
+  el.querySelectorAll('[data-del-band]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Delete band?'))return;await DB.del('resistanceBands',b.dataset.delBand);renderSettings(el);
+  }));
+  el.querySelectorAll('[data-recolor-band]').forEach(inp=>inp.addEventListener('change',async e=>{
+    const b=bands.find(x=>x.id===e.target.dataset.recolorBand);if(b){b.colorHex=e.target.value;await DB.put('resistanceBands',b);}
+  }));
+  el.querySelector('#add-cat-btn')?.addEventListener('click',()=>el.querySelector('#ac-modal').classList.remove('hide'));
+  el.querySelector('#ac-close')?.addEventListener('click',()=>el.querySelector('#ac-modal').classList.add('hide'));
+  el.querySelector('#ac-save')?.addEventListener('click',async()=>{
+    const name=el.querySelector('#ac-name').value.trim();if(!name)return;
+    await DB.put('categories',{id:uid(),name,colorHex:el.querySelector('#ac-color').value});
+    el.querySelector('#ac-modal').classList.add('hide');renderSettings(el);
+  });
+  el.querySelector('#ab-btn')?.addEventListener('click',()=>el.querySelector('#ab-modal').classList.remove('hide'));
+  el.querySelector('#ab-close')?.addEventListener('click',()=>el.querySelector('#ab-modal').classList.add('hide'));
+  el.querySelector('#ab-save')?.addEventListener('click',async()=>{
+    const name=el.querySelector('#ab-name').value.trim();if(!name)return;
+    await DB.put('resistanceBands',{id:uid(),name,colorHex:el.querySelector('#ab-color').value,order:bands.length});
+    el.querySelector('#ab-modal').classList.add('hide');renderSettings(el);
+  });
+}
+
+function catRow(c){return`<div class="srow"><div class="rl"><span class="cdotc" style="background:${c.colorHex}"></span><span>${c.name}</span></div>
+  <div class="rr"><input type="color" class="cm" value="${c.colorHex}" data-recolor="${c.id}">
+  <button class="del" data-del-cat="${c.id}">🗑</button></div></div>`;}
+function bandRow(b){return`<div class="srow"><div class="rl"><span class="cdotc" style="background:${b.colorHex}"></span><span>${b.name}</span></div>
+  <div class="rr"><input type="color" class="cm" value="${b.colorHex}" data-recolor-band="${b.id}">
+  <button class="del" data-del-band="${b.id}">🗑</button></div></div>`;}
+function addCatModal(){return`<div class="overlay hide" id="ac-modal">
+  <div class="modal"><div class="mhd"><h3>New Category</h3><button class="mclose" id="ac-close">✕</button></div>
+  <div class="mscroll">
+    <div class="fg"><label>Name *</label><input type="text" id="ac-name" class="inp" autocomplete="off"></div>
+    <div class="fg"><label>Color</label><input type="color" id="ac-color" value="#C97B8A" class="cw"></div>
+  </div>
+  <div class="mfoot"><button class="btn" id="ac-save">Add Category</button></div></div></div>`;}
+function addBandModal(){return`<div class="overlay hide" id="ab-modal">
+  <div class="modal"><div class="mhd"><h3>New Band</h3><button class="mclose" id="ab-close">✕</button></div>
+  <div class="mscroll">
+    <div class="fg"><label>Name *</label><input type="text" id="ab-name" class="inp" autocomplete="off"></div>
+    <div class="fg"><label>Color</label><input type="color" id="ab-color" value="#5BBFBF" class="cw"></div>
+  </div>
+  <div class="mfoot"><button class="btn" id="ab-save">Add Band</button></div></div></div>`;}
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+async function boot(){
+  await DB.open();
+  await seed();
+  const theme=await DB.get('settings','theme');
+  if(theme?.baseColor)await applyTheme(theme.baseColor);
+  navigate('today');
+}
+
+boot().catch(err=>{
+  document.getElementById('content').innerHTML=
+    `<div style="padding:40px 20px;text-align:center">
+      <div style="font-size:1.1rem;font-weight:600;color:var(--deep);margin-bottom:12px">Couldn't load Bloom Planner</div>
+      <div style="font-size:.85rem;color:var(--sub);margin-bottom:20px">${err.message}</div>
+      <button onclick="location.reload()" class="btn" style="width:auto;padding:12px 28px">Retry</button>
+    </div>`;
+});
+</script>
 </body>
 </html>
