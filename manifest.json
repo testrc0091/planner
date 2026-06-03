@@ -2,7 +2,7 @@
   "name": "Bloom Planner",
   "short_name": "Bloom",
   "description": "Your beautiful personal planner",
-  "start_url": "/index.html",
+  "start_url": "/planner/index.html",
   "display": "standalone",
   "background_color": "#FFF5F5",
   "theme_color": "#C97B8A",
