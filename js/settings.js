@@ -1,7 +1,7 @@
 // ─── Settings Tab ────────────────────────────────────────────────────────────
 
 import { getAll, save, remove, uuid, now, getOne } from './db.js';
-import { applyTheme } from './app.js';
+import { applyTheme } from './theme.js';
 
 export async function renderSettings(container) {
   const [categories, bands, settings] = await Promise.all([
