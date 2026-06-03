@@ -13,11 +13,11 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--lt);color:var(--text)}
 #app{display:flex;flex-direction:column;height:100vh;max-width:540px;margin:0 auto}
-#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 80px;background:var(--lt)}
-#tabbar{display:flex;background:var(--card);border-top:1px solid var(--blush);padding-top:6px;padding-bottom:calc(env(safe-area-inset-bottom,8px) + 10px);box-shadow:0 -2px 12px rgba(163,70,90,.08);flex-shrink:0}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--sub);font-size:9px;font-family:inherit;font-weight:500;padding:10px 2px;-webkit-tap-highlight-color:transparent;min-height:52px}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 24px;background:var(--lt)}
+#tabbar{display:flex;background:var(--card);border-top:none;border-radius:20px 20px 0 0;padding:8px 8px env(safe-area-inset-bottom,8px);box-shadow:0 -4px 24px rgba(163,70,90,.13);flex-shrink:0;gap:4px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--sub);font-size:9px;font-family:inherit;font-weight:500;padding:10px 4px;-webkit-tap-highlight-color:transparent;min-height:52px;border-radius:14px;transition:background .15s}
 .tab .ic{font-size:22px;line-height:1}
-.tab.on{color:var(--mauve)}
+.tab.on{color:var(--mauve);background:var(--blush)}
 .tab.on .ic{transform:scale(1.1)}
 .card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;margin-bottom:14px}
 h1{font-size:1.7rem;font-weight:700;color:var(--deep)}
@@ -307,7 +307,7 @@ async function renderToday(el){
       ${weekly.map(t=>wMini(t,cm)).join('')}</div>`:''}
     ${monthly.length?`<div class="sec"><div class="sec-hd"><span>📅</span><h2>Monthly Due</h2></div>
       ${monthly.map(t=>mMini(t,cm)).join('')}</div>`:''}
-    ${addTaskModal(cats)}`;
+    ${addTaskModal(cats)}${retroDailyModal()}`;
   el.querySelector('#add-d')?.addEventListener('click',()=>el.querySelector('#atm').classList.remove('hide'));
   el.querySelector('#atm-close')?.addEventListener('click',()=>el.querySelector('#atm').classList.add('hide'));
   el.querySelector('#atm-save')?.addEventListener('click',async()=>{
@@ -318,19 +318,49 @@ async function renderToday(el){
       isCompleted:false,createdAt:ts()});
     renderToday(el);
   });
+  // Retroactive daily logging
+  el.querySelector('#rd-close')?.addEventListener('click',()=>el.querySelector('#rd-modal').classList.add('hide'));
+  el.querySelector('#rd-save')?.addEventListener('click',async()=>{
+    const id=el.querySelector('#rd-save').dataset.rdId;
+    const t=tasks.find(x=>x.id===id);if(!t)return;
+    const dv=el.querySelector('#rd-date').value;if(!dv)return;
+    const d=new Date(dv);d.setHours(12,0,0,0);
+    t.isCompleted=true;t.completedAt=d.toISOString();
+    await DB.put('tasks',t);
+    el.querySelector('#rd-modal').classList.add('hide');
+    renderToday(el);
+  });
+  el.querySelectorAll('[data-retro-daily]').forEach(b=>b.addEventListener('click',()=>{
+    el.querySelector('#rd-save').dataset.rdId=b.dataset.retroDaily;
+    el.querySelector('#rd-date').value=new Date().toISOString().slice(0,10);
+    el.querySelector('#rd-modal').classList.remove('hide');
+  }));
   bindTaskEvents(el,tasks,()=>renderToday(el));
 }
 
 function taskCard(t,cm){
   const cat=cm[t.categoryId];const ovr=isOverdue(t)&&!t.isCompleted;
+  const compTime=t.completedAt?new Date(t.completedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
   return`<div class="card tcard ${t.isCompleted?'done':''}" data-id="${t.id}">
-    <button class="chk${t.isCompleted?' on':''}" data-chk="${t.id}">${t.isCompleted?'✓':''}</button>
-    <div class="tc"><div class="tr"><span class="ttl">${t.title}</span>
-      ${ovr?'<span class="ovr">Overdue</span>':''}
+    <button class="chk${t.isCompleted?' on':''}" data-chk="${t.id}" title="${t.isCompleted?'Tap to undo':'Mark done'}">${t.isCompleted?'✓':''}</button>
+    <div class="tc">
+      <div class="tr"><span class="ttl">${t.title}</span>
+        ${ovr?'<span class="ovr">Overdue</span>':''}
+      </div>
+      <div class="meta">
+        ${t.dueDate?`<span>${fmtTime(t.dueDate)}</span>`:''}
+        ${pillHtml(cat)}
+        ${t.isCompleted&&compTime?`<span style="color:#4caf50;font-weight:500">✓ Done at ${compTime}</span>`:''}
+      </div>
+      ${t.notes?`<div class="note">${t.notes}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        ${t.isCompleted
+          ?`<button class="bsm" data-chk="${t.id}" style="background:#fce4ec;color:#c2185b;font-size:.75rem">↩ Undo</button>`
+          :`<button class="bsm" data-retro-daily="${t.id}" style="font-size:.75rem">📅 Log past date</button>`}
+      </div>
     </div>
-    <div class="meta">${t.dueDate?`<span>${fmtTime(t.dueDate)}</span>`:''}${pillHtml(cat)}</div>
-    ${t.notes?`<div class="note">${t.notes}</div>`:''}
-    </div><button class="del" data-del="${t.id}">🗑</button></div>`;
+    <button class="del" data-del="${t.id}">🗑</button>
+  </div>`;
 }
 
 function wMini(t,cm){
@@ -373,6 +403,16 @@ function addTaskModal(cats){
     <div class="mfoot"><button class="btn" id="atm-save">Add Task</button></div></div></div>`;
 }
 
+function retroDailyModal(){
+  return`<div class="overlay hide" id="rd-modal">
+    <div class="modal"><div class="mhd"><h3>Log Past Completion</h3><button class="mclose" id="rd-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Date completed</label><input type="date" id="rd-date" class="inp"></div>
+      <p style="font-size:.82rem;color:var(--sub);margin-top:-8px">Marks this task as completed on the chosen date — it will appear in your calendar history.</p>
+    </div>
+    <div class="mfoot"><button class="btn" id="rd-save">Log Completion</button></div></div></div>`;
+}
+
 function bindTaskEvents(el,tasks,refresh){
   el.querySelectorAll('[data-chk]').forEach(b=>b.addEventListener('click',async()=>{
     const t=tasks.find(x=>x.id===b.dataset.chk);if(!t)return;
@@ -408,8 +448,13 @@ async function renderWeekly(el){
       ${ring(totF>0?totD/totF:0,'var(--mauve)',52,5)}
     </div>
     <div id="wl">${weekly.length?weekly.map(t=>weekCard(t,cm)).join(''):'<p class="empty">No weekly tasks — tap + to add one 🌸</p>'}</div>
-    ${addWeeklyModal(cats)}`;
-  el.querySelector('#add-w')?.addEventListener('click',()=>el.querySelector('#awm').classList.remove('hide'));
+    ${addWeeklyModal(cats)}${editWeeklyModal(cats)}${retroModal()}`;
+
+  el.querySelector('#add-w')?.addEventListener('click',()=>{
+    el.querySelector('#awm').classList.remove('hide');
+    el.querySelector('#aw-title').value='';
+    el.querySelector('#aw-freq').value='3';
+  });
   el.querySelector('#awm-close')?.addEventListener('click',()=>el.querySelector('#awm').classList.add('hide'));
   el.querySelector('#awm-save')?.addEventListener('click',async()=>{
     const title=el.querySelector('#aw-title').value.trim();if(!title)return;
@@ -417,21 +462,87 @@ async function renderWeekly(el){
       categoryId:el.querySelector('#aw-cat').value||null,weeklyCompletions:[],isCompleted:false,createdAt:ts()});
     renderWeekly(el);
   });
+
+  // Edit task
+  el.querySelector('#ewm-close')?.addEventListener('click',()=>el.querySelector('#ewm').classList.add('hide'));
+  el.querySelector('#ewm-save')?.addEventListener('click',async()=>{
+    const id=el.querySelector('#ewm-save').dataset.editId;
+    const t=tasks.find(x=>x.id===id);if(!t)return;
+    t.title=el.querySelector('#ew-title').value.trim()||t.title;
+    t.weeklyFrequency=parseInt(el.querySelector('#ew-freq').value)||t.weeklyFrequency;
+    t.categoryId=el.querySelector('#ew-cat').value||null;
+    await DB.put('tasks',t);
+    el.querySelector('#ewm').classList.add('hide');
+    renderWeekly(el);
+  });
+  el.querySelectorAll('[data-edit-w]').forEach(b=>b.addEventListener('click',()=>{
+    const t=tasks.find(x=>x.id===b.dataset.editW);if(!t)return;
+    el.querySelector('#ew-title').value=t.title;
+    el.querySelector('#ew-freq').value=t.weeklyFrequency;
+    el.querySelector('#ew-cat').value=t.categoryId||'';
+    el.querySelector('#ewm-save').dataset.editId=t.id;
+    el.querySelector('#ewm').classList.remove('hide');
+  }));
+
+  // Undo last completion this week
+  el.querySelectorAll('[data-undo-w]').forEach(b=>b.addEventListener('click',async()=>{
+    const t=tasks.find(x=>x.id===b.dataset.undoW);if(!t)return;
+    const thisWeek=(t.weeklyCompletions||[]).filter(d=>sameWeek(d));
+    if(!thisWeek.length)return;
+    const last=thisWeek[thisWeek.length-1];
+    t.weeklyCompletions=(t.weeklyCompletions||[]).filter(d=>d!==last);
+    await DB.put('tasks',t);renderWeekly(el);
+  }));
+
+  // Retroactive log
+  el.querySelector('#retro-close')?.addEventListener('click',()=>el.querySelector('#retro-modal').classList.add('hide'));
+  el.querySelector('#retro-save')?.addEventListener('click',async()=>{
+    const id=el.querySelector('#retro-save').dataset.retroId;
+    const t=tasks.find(x=>x.id===id);if(!t)return;
+    const dateVal=el.querySelector('#retro-date').value;if(!dateVal)return;
+    const d=new Date(dateVal);d.setHours(12,0,0,0);
+    t.weeklyCompletions=[...(t.weeklyCompletions||[]),d.toISOString()];
+    await DB.put('tasks',t);
+    el.querySelector('#retro-modal').classList.add('hide');
+    renderWeekly(el);
+  });
+  el.querySelectorAll('[data-retro-w]').forEach(b=>b.addEventListener('click',()=>{
+    el.querySelector('#retro-save').dataset.retroId=b.dataset.retroW;
+    const today=new Date().toISOString().slice(0,10);
+    el.querySelector('#retro-date').value=today;
+    el.querySelector('#retro-modal').classList.remove('hide');
+  }));
+
   bindTaskEvents(el,tasks,()=>renderWeekly(el));
 }
 
 function weekCard(t,cm){
-  const cat=cm[t.categoryId];const done=(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length;
+  const cat=cm[t.categoryId];
+  const done=(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length;
   const pct=Math.min(done/t.weeklyFrequency,1);const goal=done>=t.weeklyFrequency;
-  const dots=Array.from({length:t.weeklyFrequency},(_,i)=>`<span class="cdot" style="${i<done?`background:${cat?.colorHex||'var(--mauve)'}`:''}" ></span>`).join('');
+  const dots=Array.from({length:t.weeklyFrequency},(_,i)=>
+    `<span class="cdot" style="${i<done?`background:${cat?.colorHex||'var(--mauve)'}`:''}" ></span>`).join('');
+  const lastAll=(t.weeklyCompletions||[]);
+  const lastDate=lastAll.length?new Date(lastAll[lastAll.length-1]).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
   return`<div class="card" data-id="${t.id}">
     <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:12px">
       ${ring(pct,cat?.colorHex,52,5)}
-      <div style="flex:1"><div class="ttl">${t.title}</div>
+      <div style="flex:1">
+        <div class="ttl">${t.title}</div>
         <div class="meta">${done}/${t.weeklyFrequency} this week ${pillHtml(cat)}</div>
-      </div><button class="del" data-del="${t.id}">🗑</button></div>
+        ${lastDate?`<div class="note">Last logged: ${lastDate}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <button class="bsm" data-edit-w="${t.id}" style="font-size:.8rem">✏️ Edit</button>
+        <button class="del" data-del="${t.id}">🗑</button>
+      </div>
+    </div>
     <div class="dot-row">${dots}</div>
-    ${goal?'<div class="goal">Goal reached! ✨</div>':`<button class="log-btn" data-logw="${t.id}">+ Log Completion</button>`}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${goal?'<div class="goal" style="flex:1">Goal reached! ✨</div>':`<button class="log-btn" style="flex:1" data-logw="${t.id}">+ Log Today</button>`}
+      <button class="bsm" data-retro-w="${t.id}">📅 Past date</button>
+      ${done>0?`<button class="bsm" data-undo-w="${t.id}" style="background:#fce4ec;color:#c2185b">↩ Undo</button>`:''}
+    </div>
   </div>`;
 }
 
@@ -446,6 +557,29 @@ function addWeeklyModal(cats){
       </select></div>
     </div>
     <div class="mfoot"><button class="btn" id="awm-save">Add Task</button></div></div></div>`;
+}
+
+function editWeeklyModal(cats){
+  return`<div class="overlay hide" id="ewm">
+    <div class="modal"><div class="mhd"><h3>Edit Weekly Task</h3><button class="mclose" id="ewm-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Title</label><input type="text" id="ew-title" class="inp" autocomplete="off"></div>
+      <div class="fg"><label>Times per week</label><input type="number" id="ew-freq" class="inp" min="1" max="7"></div>
+      <div class="fg"><label>Category</label><select id="ew-cat" class="inp">
+        <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="ewm-save">Save Changes</button></div></div></div>`;
+}
+
+function retroModal(){
+  return`<div class="overlay hide" id="retro-modal">
+    <div class="modal"><div class="mhd"><h3>Log Past Completion</h3><button class="mclose" id="retro-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Date completed</label><input type="date" id="retro-date" class="inp"></div>
+      <p style="font-size:.82rem;color:var(--sub);margin-top:-8px">Pick any past date you completed this task but forgot to log.</p>
+    </div>
+    <div class="mfoot"><button class="btn" id="retro-save">Log Completion</button></div></div></div>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -475,6 +609,11 @@ async function renderMonthly(el){
     const t=tasks.find(x=>x.id===b.dataset.comp);if(!t)return;
     t.isCompleted=true;t.lastCompletedDate=ts();t.completedAt=ts();await DB.put('tasks',t);renderMonthly(el);
   }));
+  el.querySelectorAll('[data-undo-m]').forEach(b=>b.addEventListener('click',async()=>{
+    const t=tasks.find(x=>x.id===b.dataset.undoM);if(!t)return;
+    t.isCompleted=false;t.lastCompletedDate=null;t.completedAt=null;
+    await DB.put('tasks',t);renderMonthly(el);
+  }));
   el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
     if(!confirm('Delete?'))return;await DB.del('tasks',b.dataset.del);renderMonthly(el);
   }));
@@ -492,7 +631,7 @@ function monthCard(t,cm){
       <div class="meta">${pillHtml(cat)}${t.lastCompletedDate?`<span>Last: ${fmtDate(t.lastCompletedDate)}</span>`:''}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px">
-      ${s!=='done'?`<button class="bsm" data-comp="${t.id}">Mark Done</button>`:''}
+      ${s!=='done'?`<button class="bsm" data-comp="${t.id}">Mark Done</button>`:`<button class="bsm" data-undo-m="${t.id}" style="background:#fce4ec;color:#c2185b">↩ Undo</button>`}
       <button class="del" data-del="${t.id}">🗑</button>
     </div></div>`;
 }
