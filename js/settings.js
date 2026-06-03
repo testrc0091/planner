@@ -122,15 +122,20 @@ function addCategoryModal() {
           <h3>New Category</h3>
           <button class="modal-close" id="close-cat-modal">✕</button>
         </div>
-        <div class="form-group">
-          <label>Name *</label>
-          <input type="text" id="cat-name" class="input" placeholder="e.g. Yoga">
+        <div class="modal-scroll">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="cat-name" class="input" placeholder="e.g. Yoga"
+              autocomplete="off" autocorrect="off">
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <input type="color" id="cat-color" value="#C97B8A" class="color-wheel">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Color</label>
-          <input type="color" id="cat-color" value="#C97B8A" class="color-wheel">
+        <div class="modal-footer">
+          <button class="btn-primary full-width" id="save-cat-btn">Add Category</button>
         </div>
-        <button class="btn-primary" id="save-cat-btn">Add Category</button>
       </div>
     </div>
   `;
@@ -144,15 +149,20 @@ function addBandModal() {
           <h3>New Resistance Band</h3>
           <button class="modal-close" id="close-band-modal">✕</button>
         </div>
-        <div class="form-group">
-          <label>Name *</label>
-          <input type="text" id="band-name" class="input" placeholder="e.g. Light Blue">
+        <div class="modal-scroll">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="band-name" class="input" placeholder="e.g. Light Blue"
+              autocomplete="off" autocorrect="off">
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <input type="color" id="band-color" value="#5BBFBF" class="color-wheel">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Color</label>
-          <input type="color" id="band-color" value="#5BBFBF" class="color-wheel">
+        <div class="modal-footer">
+          <button class="btn-primary full-width" id="save-band-btn">Add Band</button>
         </div>
-        <button class="btn-primary" id="save-band-btn">Add Band</button>
       </div>
     </div>
   `;
@@ -223,15 +233,4 @@ function bindSettingsEvents(container, categories, bands) {
   container.querySelectorAll('[data-delete-band]').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete band?')) return;
-      await remove('resistanceBands', btn.dataset.deleteBand);
-      renderSettings(container);
-    });
-  });
-
-  container.querySelectorAll('[data-recolor-band]').forEach(input => {
-    input.addEventListener('change', async e => {
-      const band = bands.find(b => b.id === e.target.dataset.recolorBand);
-      if (band) { band.colorHex = e.target.value; await save('resistanceBands', band); }
-    });
-  });
-}
+      await remove('resistanceBands', btn.dataset.de
