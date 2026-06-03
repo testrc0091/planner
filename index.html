@@ -14,7 +14,7 @@
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--lt);color:var(--text)}
 #app{display:flex;flex-direction:column;height:100vh;max-width:540px;margin:0 auto}
 #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 24px;background:var(--lt)}
-#tabbar{display:flex;background:var(--card);border-top:none;border-radius:20px 20px 0 0;padding:8px 8px env(safe-area-inset-bottom,8px);box-shadow:0 -4px 24px rgba(163,70,90,.13);flex-shrink:0;gap:4px}
+#tabbar{display:flex;background:var(--card);border-top:none;border-radius:20px 20px 0 0;padding:8px 8px 28px;box-shadow:0 -4px 24px rgba(163,70,90,.13);flex-shrink:0;gap:4px}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--sub);font-size:9px;font-family:inherit;font-weight:500;padding:10px 4px;-webkit-tap-highlight-color:transparent;min-height:52px;border-radius:14px;transition:background .15s}
 .tab .ic{font-size:22px;line-height:1}
 .tab.on{color:var(--mauve);background:var(--blush)}
@@ -222,17 +222,80 @@ async function applyTheme(hex){
 async function seed(){
   const cats=await DB.all('categories');
   if(cats.length)return;
-  const defs=[
-    {id:uid(),name:'Physical Therapy',colorHex:'#5BBFBF'},
-    {id:uid(),name:'Lifting',colorHex:'#9B7FD4'},
-    {id:uid(),name:'Cardio',colorHex:'#F0934A'},
-    {id:uid(),name:'Self-Care',colorHex:'#E8A0A0'},
-    {id:uid(),name:'Work',colorHex:'#6BAED6'},
+
+  // ── Categories ────────────────────────────────────────
+  const PT    ={id:uid(),name:'Physical Therapy',colorHex:'#5BBFBF'};
+  const LIFT  ={id:uid(),name:'Lifting',         colorHex:'#9B7FD4'};
+  const CARD  ={id:uid(),name:'Cardio',          colorHex:'#F0934A'};
+  const CARE  ={id:uid(),name:'Self-Care',       colorHex:'#E8A0A0'};
+  const WORK  ={id:uid(),name:'Work',            colorHex:'#6BAED6'};
+  const CHORES={id:uid(),name:'Chores',          colorHex:'#A8C5A0'};
+  for(const c of [PT,LIFT,CARD,CARE,WORK,CHORES]) await DB.put('categories',c);
+
+  // ── Daily tasks ───────────────────────────────────────
+  await DB.put('tasks',{id:uid(),title:'Morning journal',notes:'Write 3 things I\'m grateful for',
+    taskType:'daily',priority:'low',categoryId:CARE.id,isCompleted:false,createdAt:ts()});
+
+  // ── Weekly tasks ──────────────────────────────────────
+  const weekly=[
+    {title:'Physical therapy for hips',    freq:5, cat:PT.id},
+    {title:'Physical therapy for shoulder',freq:2, cat:PT.id},
+    {title:'Change sheets',                freq:1, cat:CHORES.id},
+    {title:'Change pillowcases',           freq:2, cat:CHORES.id},
+    {title:'Empty coffee grounds',         freq:1, cat:CHORES.id},
+    {title:'Clean espresso basket',        freq:1, cat:CHORES.id},
   ];
-  for(const c of defs)await DB.put('categories',c);
-  await DB.put('tasks',{id:uid(),title:'Morning journal',notes:'Write 3 gratitude',taskType:'daily',priority:'low',categoryId:defs[3].id,isCompleted:false,createdAt:ts()});
-  await DB.put('tasks',{id:uid(),title:'Physical therapy for hips',taskType:'weekly',weeklyFrequency:3,categoryId:defs[0].id,weeklyCompletions:[],isCompleted:false,createdAt:ts()});
-  await DB.put('tasks',{id:uid(),title:'Lash lift',taskType:'monthly',monthlyPreferredDay:15,categoryId:defs[3].id,isCompleted:false,lastCompletedDate:null,createdAt:ts()});
+  for(const w of weekly)
+    await DB.put('tasks',{id:uid(),title:w.title,taskType:'weekly',
+      weeklyFrequency:w.freq,categoryId:w.cat,weeklyCompletions:[],
+      isCompleted:false,createdAt:ts()});
+
+  // ── Monthly tasks ─────────────────────────────────────
+  const monthly=[
+    {title:'Lash lift',    day:15, cat:CARE.id},
+    {title:'Change duvet', day:1,  cat:CHORES.id},
+    {title:'Sugar',        day:1,  cat:CARE.id},
+  ];
+  for(const m of monthly)
+    await DB.put('tasks',{id:uid(),title:m.title,taskType:'monthly',
+      monthlyPreferredDay:m.day,categoryId:m.cat,
+      isCompleted:false,lastCompletedDate:null,createdAt:ts()});
+
+  // ── Workout templates ─────────────────────────────────
+  const s3r10=(name,sets=3,reps=10)=>({
+    name, isBand:false,
+    sets:Array.from({length:sets},()=>({reps,weight:0,unit:'kg'}))
+  });
+
+  // Shoulder PT
+  await DB.put('workoutTemplates',{
+    id:uid(), name:'Shoulder PT', categoryId:PT.id, createdAt:ts(),
+    exercises:[
+      s3r10('Wall Y Lift Off'),
+      s3r10('Plank Shoulder Tap'),
+      s3r10('Single Arm 90-90'),
+      s3r10('Bicep Curl to Shoulder Press'),
+      s3r10('Plank Downward Dog'),
+      s3r10('Shoulder Flexion'),
+      s3r10('Shoulder Extension'),
+      s3r10('Scap Clock'),
+      s3r10('Prone Angel'),
+    ]
+  });
+
+  // Glutes PT
+  await DB.put('workoutTemplates',{
+    id:uid(), name:'Glutes PT', categoryId:PT.id, createdAt:ts(),
+    exercises:[
+      s3r10('Banded Side Walks',2,10),
+      s3r10('Banded Monster Walks',2,10),
+      s3r10('Hip Hikes',2,10),
+      s3r10('Step Ups'),
+      s3r10('Bird Dog'),
+      s3r10('Resistance Band Hip Rotations',2,10),
+      s3r10('Heel Squeeze'),
+    ]
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1248,6 +1311,22 @@ async function renderSettings(el){
       ${bands.length?bands.map(b=>bandRow(b)).join(''):'<div class="srow" style="color:var(--sub);font-size:.9rem">No bands yet</div>'}
       <div class="srow"><button class="btn2" id="add-band-btn" style="width:100%">+ Add Band</button></div>
     </div>
+    <div class="lbl">Data Backup</div>
+    <div class="scard" style="margin-bottom:24px">
+      <div class="srow" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <span style="font-weight:600">Export all data</span>
+        <span style="font-size:.8rem;color:var(--sub)">Saves a backup file to your phone. Do this before clearing Safari cache.</span>
+        <button class="btn" id="export-btn" style="margin-top:4px">📤 Export Backup</button>
+      </div>
+      <div class="srow" style="flex-direction:column;align-items:flex-start;gap:6px;border-top:1px solid var(--blush)">
+        <span style="font-weight:600">Import data</span>
+        <span style="font-size:.8rem;color:var(--sub)">Restore from a previously exported backup file.</span>
+        <label class="btn btn2" style="text-align:center;cursor:pointer;margin-top:4px">
+          📥 Import Backup
+          <input type="file" id="import-file" accept=".json" style="display:none">
+        </label>
+      </div>
+    </div>
     <div class="lbl">About</div>
     <div class="scard">
       <div class="srow"><span>🌸 Bloom Planner</span><span class="muted">v1.0 PWA</span></div>
@@ -1277,6 +1356,35 @@ async function renderSettings(el){
   el.querySelectorAll('[data-recolor-band]').forEach(inp=>inp.addEventListener('change',async e=>{
     const b=bands.find(x=>x.id===e.target.dataset.recolorBand);if(b){b.colorHex=e.target.value;await DB.put('resistanceBands',b);}
   }));
+  // Export backup
+  el.querySelector('#export-btn')?.addEventListener('click',async()=>{
+    const stores=['tasks','categories','workoutSessions','workoutTemplates','personalRecords','periodEntries','symptomLogs','resistanceBands','settings'];
+    const backup={version:1,exportedAt:ts(),data:{}};
+    for(const s of stores) backup.data[s]=await DB.all(s);
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`bloom-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('Backup saved! Check your Downloads or Files app.');
+  });
+  // Import backup
+  el.querySelector('#import-file')?.addEventListener('change',async e=>{
+    const file=e.target.files[0];if(!file)return;
+    const text=await file.text();
+    let backup;
+    try{backup=JSON.parse(text)}catch{alert('Invalid backup file.');return}
+    if(!backup.data){alert('Invalid backup format.');return}
+    if(!confirm(`This will replace ALL current data with the backup from ${backup.exportedAt?.slice(0,10)||'unknown date'}. Continue?`))return;
+    const stores=Object.keys(backup.data);
+    for(const s of stores){
+      const items=backup.data[s]||[];
+      for(const item of items) await DB.put(s,item);
+    }
+    alert('Backup restored successfully! ✅');
+    renderSettings(el);
+  });
   el.querySelector('#add-cat-btn')?.addEventListener('click',()=>el.querySelector('#ac-modal').classList.remove('hide'));
   el.querySelector('#ac-close')?.addEventListener('click',()=>el.querySelector('#ac-modal').classList.add('hide'));
   el.querySelector('#ac-save')?.addEventListener('click',async()=>{
