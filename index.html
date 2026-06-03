@@ -14,7 +14,7 @@
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--lt);color:var(--text)}
 #app{display:flex;flex-direction:column;height:100vh;max-width:540px;margin:0 auto}
 #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 80px;background:var(--lt)}
-#tabbar{display:flex;background:var(--card);border-top:1px solid var(--blush);padding-top:6px;padding-bottom:max(20px,env(safe-area-inset-bottom,20px));
+#tabbar{display:flex;background:var(--card);border-top:1px solid var(--blush);padding-top:6px;padding-bottom:max(20px,env(safe-area-inset-bottom,20px));box-shadow:0 -2px 12px rgba(163,70,90,.08);flex-shrink:0}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--sub);font-size:9px;font-family:inherit;font-weight:500;padding:10px 2px;-webkit-tap-highlight-color:transparent;min-height:52px}
 .tab .ic{font-size:22px;line-height:1}
 .tab.on{color:var(--mauve)}
