@@ -812,8 +812,8 @@ let woStart,woPauseStart,woTotalPaused=0,woIsPaused=false,woInterval,woSecs=0;
 
 function workoutModal(cats,bands){
   return`<div class="overlay hide" id="wo-modal">
-  <div class="modal" style="max-height:92vh">
-    <div class="mhd"><h3 id="wo-title">New Workout</h3><button class="mclose" id="wo-close">✕</button></div>
+  <div class="modal" style="max-height:92vh;height:92vh;display:flex;flex-direction:column">
+    <div class="mhd" style="flex-shrink:0"><h3 id="wo-title">New Workout</h3><button class="mclose" id="wo-close">✕</button></div>
     <div id="wo-pre" class="mscroll">
       <div class="fg"><label>Category</label><select id="wo-cat" class="inp">
         <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
@@ -822,16 +822,16 @@ function workoutModal(cats,bands){
         <div class="sl-lbl"><span>😴</span><span>💪</span></div></div>
       <div style="margin-bottom:8px"><button class="btn" id="start-log">Start Workout ▶</button></div>
     </div>
-    <div id="wo-active" class="hide">
-      <div class="ebar">
+    <div id="wo-active" class="hide" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+      <div class="ebar" style="flex-shrink:0">
         <span class="timer" id="wo-timer">00:00</span>
         <button id="wo-pause" style="font-size:1.5rem;background:none;border:none;cursor:pointer;color:var(--mauve)">⏸</button>
         <span id="wo-paused" class="hide" style="font-size:.8rem;color:var(--sub);background:var(--blush);padding:3px 10px;border-radius:999px">Paused</span>
       </div>
-      <div style="flex:1;overflow-y:auto;padding:0 20px">
+      <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 20px">
         <div id="wo-exs"></div>
         <button class="btn2" id="wo-add-ex" style="width:100%;margin-bottom:8px">+ Add Exercise</button>
-        <button class="btn" id="wo-finish">Finish Workout</button>
+        <button class="btn" id="wo-finish" style="width:100%;margin-bottom:8px">Finish Workout</button>
       </div>
     </div>
     <div id="wo-post" class="hide">
@@ -933,16 +933,28 @@ function renderExCard(ex,bands){
 }
 
 function renderSetRow(set,isBand,bands){
-  return`<div class="set-row" data-sid="${set.id}">
+  const done=set.done||false;
+  return`<div class="set-row${done?' set-done':''}" data-sid="${set.id}" style="${done?'background:#f0fff4;border-radius:8px;padding:6px 4px;':''}">
     <button class="wb${set.isWarmup?' on':''}" data-wb="${set.id}">W</button>
-    <div class="rc"><button class="rb minus" data-sid="${set.id}">−</button>
+    <div class="rc">
+      <button class="rb minus" data-sid="${set.id}">−</button>
       <span class="rv">${set.reps}</span>
       <button class="rb plus" data-sid="${set.id}">+</button>
-      <span style="font-size:.72rem;color:var(--sub)">reps</span></div>
-    ${isBand?`<div class="bd-pick">${bands.map(b=>`<button class="bd${set.bandId===b.id?' on':''}" style="background:${b.colorHex}" data-bid="${b.id}" title="${b.name}"></button>`).join('')}</div>`
-    :`<div class="wc"><input type="number" class="inp wi" value="${set.weight}" min="0" step=".5">
-      <button class="ut">${set.unit}</button></div>`}
-    <button style="background:none;border:none;cursor:pointer;opacity:.4;font-size:.85rem" data-del-set="${set.id}">✕</button>
+      <span style="font-size:.72rem;color:var(--sub)">reps</span>
+    </div>
+    ${isBand
+      ?`<div class="bd-pick">${bands.map(b=>`<button class="bd${set.bandId===b.id?' on':''}" style="background:${b.colorHex}" data-bid="${b.id}" title="${b.name}"></button>`).join('')}</div>`
+      :`<div class="wc">
+          <input type="number" class="inp wi" value="${set.weight}" min="0" step=".5">
+          <button class="ut">${set.unit}</button>
+        </div>`}
+    <button class="set-done-btn" data-done-set="${set.id}"
+      style="width:32px;height:32px;border-radius:50%;border:2px solid ${done?'#4caf50':'#ccc'};
+             background:${done?'#4caf50':'transparent'};color:${done?'#fff':'#ccc'};
+             font-size:.9rem;cursor:pointer;flex-shrink:0;font-weight:700">
+      ✓
+    </button>
+    <button style="background:none;border:none;cursor:pointer;opacity:.4;font-size:.85rem;flex-shrink:0" data-del-set="${set.id}">✕</button>
   </div>`;}
 
 function bindExCard(div,ex,bands){
@@ -989,6 +1001,19 @@ function bindSetRows(div,ex,bands){
   }));
   div.querySelectorAll('[data-del-set]').forEach(b=>b.addEventListener('click',()=>{
     const sid=b.dataset.delSet;ex.sets=ex.sets.filter(s=>s.id!==sid);b.closest('.set-row').remove();
+  }));
+  div.querySelectorAll('[data-done-set]').forEach(b=>b.addEventListener('click',()=>{
+    const s=ex.sets.find(x=>x.id===b.dataset.doneSet);if(!s)return;
+    s.done=!s.done;
+    const row=b.closest('.set-row');
+    // Update row style
+    row.style.background=s.done?'#f0fff4':'';
+    row.style.borderRadius=s.done?'8px':'';
+    row.style.padding=s.done?'6px 4px':'';
+    // Update button style
+    b.style.borderColor=s.done?'#4caf50':'#ccc';
+    b.style.background=s.done?'#4caf50':'transparent';
+    b.style.color=s.done?'#fff':'#ccc';
   }));
 }
 
