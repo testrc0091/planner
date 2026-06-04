@@ -352,7 +352,8 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>navi
 async function renderToday(el){
   const [tasks,cats]=await Promise.all([DB.all('tasks'),DB.all('categories')]);
   const cm=catMap(cats);
-  const daily=tasks.filter(t=>t.taskType==='daily'&&(isToday(t.createdAt)||isOverdue(t)));
+  const daily=tasks.filter(t=>t.taskType==='daily'&&(isToday(t.createdAt)||isOverdue(t)))
+    .sort((a,b)=>(a.isCompleted?1:0)-(b.isCompleted?1:0));
   const weekly=tasks.filter(t=>t.taskType==='weekly'&&(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length<t.weeklyFrequency);
   const monthly=tasks.filter(t=>t.taskType==='monthly'&&monthlyStatus(t)!=='done');
   const now=new Date();
@@ -370,7 +371,7 @@ async function renderToday(el){
       ${weekly.map(t=>wMini(t,cm)).join('')}</div>`:''}
     ${monthly.length?`<div class="sec"><div class="sec-hd"><span>📅</span><h2>Monthly Due</h2></div>
       ${monthly.map(t=>mMini(t,cm)).join('')}</div>`:''}
-    ${addTaskModal(cats)}${retroDailyModal()}`;
+    ${addTaskModal(cats)}${retroDailyModal()}${editDailyModal(cats)}`;
   el.querySelector('#add-d')?.addEventListener('click',()=>el.querySelector('#atm').classList.remove('hide'));
   el.querySelector('#atm-close')?.addEventListener('click',()=>el.querySelector('#atm').classList.add('hide'));
   el.querySelector('#atm-save')?.addEventListener('click',async()=>{
@@ -398,13 +399,38 @@ async function renderToday(el){
     el.querySelector('#rd-date').value=new Date().toISOString().slice(0,10);
     el.querySelector('#rd-modal').classList.remove('hide');
   }));
+  // Edit daily task
+  el.querySelector('#ed-close')?.addEventListener('click',()=>el.querySelector('#ed-modal').classList.add('hide'));
+  el.querySelector('#ed-save')?.addEventListener('click',async()=>{
+    const id=el.querySelector('#ed-save').dataset.editId;
+    const t=tasks.find(x=>x.id===id);if(!t)return;
+    t.title=el.querySelector('#ed-title').value.trim()||t.title;
+    t.notes=el.querySelector('#ed-notes').value;
+    t.priority=el.querySelector('#ed-pri').value;
+    t.categoryId=el.querySelector('#ed-cat').value||null;
+    const tv=el.querySelector('#ed-time').value;
+    t.dueDate=tv?new Date().toISOString().slice(0,10)+'T'+tv:null;
+    await DB.put('tasks',t);
+    el.querySelector('#ed-modal').classList.add('hide');
+    renderToday(el);
+  });
+  el.querySelectorAll('[data-edit-daily]').forEach(b=>b.addEventListener('click',()=>{
+    const t=tasks.find(x=>x.id===b.dataset.editDaily);if(!t)return;
+    el.querySelector('#ed-title').value=t.title;
+    el.querySelector('#ed-notes').value=t.notes||'';
+    el.querySelector('#ed-pri').value=t.priority||'none';
+    el.querySelector('#ed-cat').value=t.categoryId||'';
+    el.querySelector('#ed-time').value=t.dueDate?t.dueDate.slice(11,16):'';
+    el.querySelector('#ed-save').dataset.editId=t.id;
+    el.querySelector('#ed-modal').classList.remove('hide');
+  }));
   bindTaskEvents(el,tasks,()=>renderToday(el));
 }
 
 function taskCard(t,cm){
   const cat=cm[t.categoryId];const ovr=isOverdue(t)&&!t.isCompleted;
   const compTime=t.completedAt?new Date(t.completedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
-  return`<div class="card tcard ${t.isCompleted?'done':''}" data-id="${t.id}">
+  return`<div class="card tcard ${t.isCompleted?'done':''}" data-id="${t.id}" style="${t.isCompleted?'opacity:.7':''}">
     <button class="chk${t.isCompleted?' on':''}" data-chk="${t.id}" title="${t.isCompleted?'Tap to undo':'Mark done'}">${t.isCompleted?'✓':''}</button>
     <div class="tc">
       <div class="tr"><span class="ttl">${t.title}</span>
@@ -417,9 +443,10 @@ function taskCard(t,cm){
       </div>
       ${t.notes?`<div class="note">${t.notes}</div>`:''}
       <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button class="bsm" data-edit-daily="${t.id}" style="font-size:.75rem">✏️ Edit</button>
         ${t.isCompleted
           ?`<button class="bsm" data-chk="${t.id}" style="background:#fce4ec;color:#c2185b;font-size:.75rem">↩ Undo</button>`
-          :`<button class="bsm" data-retro-daily="${t.id}" style="font-size:.75rem">📅 Log past date</button>`}
+          :`<button class="bsm" data-retro-daily="${t.id}" style="font-size:.75rem">📅 Past date</button>`}
       </div>
     </div>
     <button class="del" data-del="${t.id}">🗑</button>
@@ -466,6 +493,24 @@ function addTaskModal(cats){
     <div class="mfoot"><button class="btn" id="atm-save">Add Task</button></div></div></div>`;
 }
 
+function editDailyModal(cats){
+  return`<div class="overlay hide" id="ed-modal">
+    <div class="modal"><div class="mhd"><h3>Edit Task</h3><button class="mclose" id="ed-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Title</label><input type="text" id="ed-title" class="inp" autocomplete="off"></div>
+      <div class="fg"><label>Notes</label><textarea id="ed-notes" class="inp" rows="2"></textarea></div>
+      <div class="fg"><label>Due time</label><input type="time" id="ed-time" class="inp"></div>
+      <div class="fg"><label>Priority</label><select id="ed-pri" class="inp">
+        <option value="none">None</option><option value="low">Low</option>
+        <option value="medium">Medium</option><option value="high">High</option>
+      </select></div>
+      <div class="fg"><label>Category</label><select id="ed-cat" class="inp">
+        <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="ed-save">Save Changes</button></div></div></div>`;
+}
+
 function retroDailyModal(){
   return`<div class="overlay hide" id="rd-modal">
     <div class="modal"><div class="mhd"><h3>Log Past Completion</h3><button class="mclose" id="rd-close">✕</button></div>
@@ -496,7 +541,13 @@ function bindTaskEvents(el,tasks,refresh){
 // ═══════════════════════════════════════════════════════
 async function renderWeekly(el){
   const[tasks,cats]=await Promise.all([DB.all('tasks'),DB.all('categories')]);
-  const weekly=tasks.filter(t=>t.taskType==='weekly');const cm=catMap(cats);
+  const weekly=tasks.filter(t=>t.taskType==='weekly')
+    .sort((a,b)=>{
+      const aDone=(a.weeklyCompletions||[]).filter(d=>sameWeek(d)).length>=a.weeklyFrequency;
+      const bDone=(b.weeklyCompletions||[]).filter(d=>sameWeek(d)).length>=b.weeklyFrequency;
+      return (aDone?1:0)-(bDone?1:0);
+    });
+  const cm=catMap(cats);
   const totF=weekly.reduce((s,t)=>s+t.weeklyFrequency,0);
   const totD=weekly.reduce((s,t)=>s+(t.weeklyCompletions||[]).filter(d=>sameWeek(d)).length,0);
   const now=new Date();const mon=new Date(now);mon.setDate(now.getDate()-((now.getDay()+6)%7));
@@ -650,14 +701,16 @@ function retroModal(){
 // ═══════════════════════════════════════════════════════
 async function renderMonthly(el){
   const[tasks,cats]=await Promise.all([DB.all('tasks'),DB.all('categories')]);
-  const monthly=tasks.filter(t=>t.taskType==='monthly');const cm=catMap(cats);
+  const monthly=tasks.filter(t=>t.taskType==='monthly')
+    .sort((a,b)=>(monthlyStatus(a)==='done'?1:0)-(monthlyStatus(b)==='done'?1:0));
+  const cm=catMap(cats);
   const now=new Date();
   el.innerHTML=`
     <div class="page-hd"><div><h1>Monthly Tasks</h1>
       <div class="sub">${now.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div></div>
       <button class="bfab" id="add-m">+</button></div>
     <div id="ml">${monthly.length?monthly.map(t=>monthCard(t,cm)).join(''):'<p class="empty">No monthly tasks — tap + to add one 🌸</p>'}</div>
-    ${addMonthlyModal(cats)}`;
+    ${addMonthlyModal(cats)}${editMonthlyModal(cats)}`;
   el.querySelector('#add-m')?.addEventListener('click',()=>el.querySelector('#amm').classList.remove('hide'));
   el.querySelector('#amm-close')?.addEventListener('click',()=>el.querySelector('#amm').classList.add('hide'));
   el.querySelector('#amm-save')?.addEventListener('click',async()=>{
@@ -680,6 +733,26 @@ async function renderMonthly(el){
   el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
     if(!confirm('Delete?'))return;await DB.del('tasks',b.dataset.del);renderMonthly(el);
   }));
+  // Edit monthly
+  el.querySelector('#emm-close')?.addEventListener('click',()=>el.querySelector('#emm').classList.add('hide'));
+  el.querySelector('#emm-save')?.addEventListener('click',async()=>{
+    const id=el.querySelector('#emm-save').dataset.editId;
+    const t=tasks.find(x=>x.id===id);if(!t)return;
+    t.title=el.querySelector('#em-title').value.trim()||t.title;
+    t.monthlyPreferredDay=parseInt(el.querySelector('#em-day').value)||t.monthlyPreferredDay;
+    t.categoryId=el.querySelector('#em-cat').value||null;
+    await DB.put('tasks',t);
+    el.querySelector('#emm').classList.add('hide');
+    renderMonthly(el);
+  });
+  el.querySelectorAll('[data-edit-m]').forEach(b=>b.addEventListener('click',()=>{
+    const t=tasks.find(x=>x.id===b.dataset.editM);if(!t)return;
+    el.querySelector('#em-title').value=t.title;
+    el.querySelector('#em-day').value=t.monthlyPreferredDay||1;
+    el.querySelector('#em-cat').value=t.categoryId||'';
+    el.querySelector('#emm-save').dataset.editId=t.id;
+    el.querySelector('#emm').classList.remove('hide');
+  }));
 }
 
 function monthCard(t,cm){
@@ -694,9 +767,23 @@ function monthCard(t,cm){
       <div class="meta">${pillHtml(cat)}${t.lastCompletedDate?`<span>Last: ${fmtDate(t.lastCompletedDate)}</span>`:''}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="bsm" data-edit-m="${t.id}">✏️ Edit</button>
       ${s!=='done'?`<button class="bsm" data-comp="${t.id}">Mark Done</button>`:`<button class="bsm" data-undo-m="${t.id}" style="background:#fce4ec;color:#c2185b">↩ Undo</button>`}
       <button class="del" data-del="${t.id}">🗑</button>
     </div></div>`;
+}
+
+function editMonthlyModal(cats){
+  return`<div class="overlay hide" id="emm">
+    <div class="modal"><div class="mhd"><h3>Edit Monthly Task</h3><button class="mclose" id="emm-close">✕</button></div>
+    <div class="mscroll">
+      <div class="fg"><label>Title</label><input type="text" id="em-title" class="inp" autocomplete="off"></div>
+      <div class="fg"><label>Preferred day of month</label><input type="number" id="em-day" class="inp" min="1" max="28"></div>
+      <div class="fg"><label>Category</label><select id="em-cat" class="inp">
+        <option value="">None</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="emm-save">Save Changes</button></div></div></div>`;
 }
 
 function addMonthlyModal(cats){
