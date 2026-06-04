@@ -1531,12 +1531,23 @@ async function renderSettings(el){
     let backup;
     try{backup=JSON.parse(text)}catch{alert('Invalid backup file.');return}
     if(!backup.data){alert('Invalid backup format.');return}
-    if(!confirm(`This will replace ALL current data with the backup from ${backup.exportedAt?.slice(0,10)||'unknown date'}. Continue?`))return;
+    if(!confirm(`This will REPLACE all current data with the backup from ${backup.exportedAt?.slice(0,10)||'unknown date'}. Continue?`))return;
+    // Clear all stores first to prevent duplicates
+    const db=await DB.open();
+    const allStores=STORES_LIST;
+    await new Promise((ok,fail)=>{
+      const tx=db.transaction(allStores,'readwrite');
+      allStores.forEach(s=>tx.objectStore(s).clear());
+      tx.oncomplete=ok;tx.onerror=fail;
+    });
+    // Then import all items from backup
     const stores=Object.keys(backup.data);
     for(const s of stores){
       const items=backup.data[s]||[];
       for(const item of items) await DB.put(s,item);
     }
+    // Also update localStorage backup to match
+    localStorage.setItem('bloom_backup',JSON.stringify({version:1,savedAt:ts(),data:backup.data}));
     alert('Backup restored successfully! ✅');
     renderSettings(el);
   });
