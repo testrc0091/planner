@@ -182,10 +182,40 @@ DB.open=()=>new Promise((ok,fail)=>{
 });
 DB.all=async s=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>f(r.error)})};
 DB.get=async(s,id)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readonly').objectStore(s).get(id);r.onsuccess=()=>ok(r.result);r.onerror=()=>f(r.error)})};
-DB.put=async(s,item)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(item);r.onsuccess=()=>ok(r.result);r.onerror=()=>f(r.error)})};
-DB.del=async(s,id)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(id);r.onsuccess=()=>ok();r.onerror=()=>f(r.error)})};
+DB.put=async(s,item)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(item);r.onsuccess=()=>{ok(r.result);scheduleAutoBackup()};r.onerror=()=>f(r.error)})};
+DB.del=async(s,id)=>{const db=await DB.open();return new Promise((ok,f)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(id);r.onsuccess=()=>{ok();scheduleAutoBackup()};r.onerror=()=>f(r.error)})};
 const uid=()=>crypto.randomUUID();
 const ts=()=>new Date().toISOString();
+
+// ── Auto-backup to localStorage (safety net if IndexedDB is cleared) ──────────
+const STORES_LIST=['tasks','categories','workoutSessions','workoutTemplates','personalRecords','periodEntries','symptomLogs','resistanceBands','settings'];
+let _backupTimer=null;
+function scheduleAutoBackup(){
+  clearTimeout(_backupTimer);
+  _backupTimer=setTimeout(async()=>{
+    try{
+      const data={};
+      for(const s of STORES_LIST)data[s]=await DB.all(s);
+      localStorage.setItem('bloom_backup',JSON.stringify({version:1,savedAt:ts(),data}));
+    }catch(e){}
+  },2000); // debounce 2s after last write
+}
+
+async function restoreFromLocalStorageIfNeeded(){
+  try{
+    const cats=await DB.all('categories');
+    if(cats.length>0)return false; // DB has data, no restore needed
+    const raw=localStorage.getItem('bloom_backup');
+    if(!raw)return false;
+    const backup=JSON.parse(raw);
+    if(!backup?.data)return false;
+    for(const s of STORES_LIST){
+      for(const item of (backup.data[s]||[]))await DB.put(s,item);
+    }
+    console.log('Bloom: restored from localStorage backup');
+    return true;
+  }catch(e){return false;}
+}
 
 // ═══════════════════════════════════════════════════════
 // THEME
@@ -1032,7 +1062,7 @@ function renderSetRow(set,isBand,bands){
     ${isBand
       ?`<div class="bd-pick">${bands.map(b=>`<button class="bd${set.bandId===b.id?' on':''}" style="background:${b.colorHex}" data-bid="${b.id}" title="${b.name}"></button>`).join('')}</div>`
       :`<div class="wc">
-          <input type="number" class="inp wi" value="${set.weight}" min="0" step=".5">
+          <input type="number" class="inp wi" value="${set.weight||''}" placeholder="0" min="0" step=".5">
           <button class="ut">${set.unit}</button>
         </div>`}
     <button class="set-done-btn" data-done-set="${set.id}"
@@ -1121,19 +1151,32 @@ function bindTemplateModal(el,cats){
   el.querySelector('#tmpl-add-ex')?.addEventListener('click',()=>{
     const div=document.createElement('div');
     div.innerHTML=`<div class="excard" style="margin-bottom:10px">
-      <input type="text" class="inp tmpl-ex-name" placeholder="Exercise name" style="margin-bottom:8px">
-      <div style="display:flex;gap:8px">
-        <div class="fg" style="flex:1"><label>Sets</label><input type="number" class="inp tmpl-sets" value="3" min="1"></div>
-        <div class="fg" style="flex:1"><label>Reps</label><input type="number" class="inp tmpl-reps" value="10" min="1"></div>
-      </div></div>`;
-    el.querySelector('#tmpl-exs').appendChild(div.firstElementChild);
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <input type="text" class="inp tmpl-ex-name" placeholder="Exercise name" style="flex:1">
+        <button class="del tmpl-ex-del" style="flex-shrink:0">🗑</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div class="fg" style="flex:1;margin-bottom:0"><label>Sets</label><input type="number" class="inp tmpl-sets" value="3" min="1"></div>
+        <div class="fg" style="flex:1;margin-bottom:0"><label>Reps</label><input type="number" class="inp tmpl-reps" value="10" min="1"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:.82rem;color:var(--sub);display:flex;align-items:center;gap:6px">
+          <input type="checkbox" class="tmpl-is-band"> Resistance band exercise
+        </label>
+      </div>
+    </div>`;
+    const card=div.firstElementChild;
+    card.querySelector('.tmpl-ex-del').addEventListener('click',()=>card.remove());
+    el.querySelector('#tmpl-exs').appendChild(card);
   });
   el.querySelector('#tmpl-save')?.addEventListener('click',async()=>{
     const name=el.querySelector('#tmpl-title').value.trim();if(!name)return;
     const exCards=el.querySelectorAll('#tmpl-exs .excard');
     const exercises=Array.from(exCards).map(c=>({
-      name:c.querySelector('.tmpl-ex-name').value,isBand:false,
-      sets:Array.from({length:parseInt(c.querySelector('.tmpl-sets').value)||3},()=>({reps:parseInt(c.querySelector('.tmpl-reps').value)||10,weight:0,unit:'kg'}))
+      name:c.querySelector('.tmpl-ex-name').value,
+      isBand:c.querySelector('.tmpl-is-band').checked,
+      sets:Array.from({length:parseInt(c.querySelector('.tmpl-sets').value)||3},
+        ()=>({reps:parseInt(c.querySelector('.tmpl-reps').value)||10,weight:0,unit:'kg',bandId:null}))
     }));
     await DB.put('workoutTemplates',{id:uid(),name,categoryId:el.querySelector('#tmpl-cat').value||null,exercises,createdAt:ts()});
     el.querySelector('#tmpl-modal').classList.add('hide');renderFitness(el);
@@ -1539,7 +1582,8 @@ function addBandModal(){return`<div class="overlay hide" id="ab-modal">
 // ═══════════════════════════════════════════════════════
 async function boot(){
   await DB.open();
-  await seed();
+  await restoreFromLocalStorageIfNeeded(); // restore if IndexedDB was cleared
+  await seed();                            // only seeds if still empty after restore
   const theme=await DB.get('settings','theme');
   if(theme?.baseColor)await applyTheme(theme.baseColor);
   navigate('today');
