@@ -102,6 +102,7 @@ function templateCard(tmpl, catMap) {
       </div>
       <div class="template-actions">
         <button class="btn-small" data-use-template="${tmpl.id}">Use</button>
+        <button class="btn-small btn-edit" data-edit-template="${tmpl.id}">✏️</button>
         <button class="delete-btn" data-delete-template="${tmpl.id}">🗑</button>
       </div>
     </div>
@@ -235,9 +236,10 @@ function templateModal(categories, bands) {
     <div class="modal-overlay hidden" id="template-modal">
       <div class="modal modal-large">
         <div class="modal-header">
-          <h3>New Template</h3>
+          <h3 id="template-modal-title">New Template</h3>
           <button class="modal-close" id="close-template-modal">✕</button>
         </div>
+        <input type="hidden" id="tmpl-edit-id">
         <div class="form-group">
           <label>Template Name *</label>
           <input type="text" id="tmpl-name" class="input" placeholder="e.g. Push Day">
@@ -330,7 +332,13 @@ function setRowHTML(set, isBand, bands) {
           <button class="unit-toggle">${set.unit}</button>
         </div>
       `}
+      <button class="done-set-btn" data-setid="${set.id}" title="Mark done &amp; start rest">✓</button>
       <button class="delete-btn set-delete" data-setid="${set.id}">✕</button>
+    </div>
+    <div class="rest-timer hidden" id="rest-${set.id}">
+      <span class="rest-label">Rest</span>
+      <span class="rest-countdown">2:00</span>
+      <button class="rest-skip">Skip</button>
     </div>
   `;
 }
@@ -421,7 +429,50 @@ function bindSetEvents(div, ex, bands) {
     btn.addEventListener('click', () => {
       const setId = btn.dataset.setid;
       ex.sets = ex.sets.filter(s => s.id !== setId);
-      btn.closest('.set-row').remove();
+      const row = btn.closest('.set-row');
+      const restEl = row.nextElementSibling;
+      if (restEl?.classList.contains('rest-timer')) restEl.remove();
+      row.remove();
+    });
+  });
+
+  div.querySelectorAll('.done-set-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const setId = btn.dataset.setid;
+      const restEl = document.getElementById(`rest-${setId}`);
+      if (!restEl || restEl.dataset.running === 'true') return;
+
+      btn.classList.add('done');
+      btn.disabled = true;
+      restEl.classList.remove('hidden');
+      restEl.dataset.running = 'true';
+
+      let remaining = 120;
+      const countdownEl = restEl.querySelector('.rest-countdown');
+
+      const tick = () => {
+        remaining--;
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        countdownEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        if (remaining <= 0) finish();
+      };
+
+      const interval = setInterval(tick, 1000);
+
+      const finish = () => {
+        clearInterval(interval);
+        restEl.classList.add('hidden');
+        restEl.dataset.running = 'false';
+        countdownEl.textContent = '2:00';
+        btn.classList.remove('done');
+        btn.disabled = false;
+      };
+
+      restEl.querySelector('.rest-skip').addEventListener('click', () => {
+        clearInterval(interval);
+        finish();
+      }, { once: true });
     });
   });
 }
@@ -447,6 +498,39 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
       container.querySelector('#workout-modal').classList.remove('hidden');
       // Pre-fill exercises after switching to active screen
       container.querySelector('#start-logging-btn').dataset.templateId = tmpl.id;
+    });
+  });
+
+  // Edit template
+  container.querySelectorAll('[data-edit-template]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tmpl = templates.find(t => t.id === btn.dataset.editTemplate);
+      if (!tmpl) return;
+      container.querySelector('#tmpl-edit-id').value = tmpl.id;
+      container.querySelector('#template-modal-title').textContent = 'Edit Template';
+      container.querySelector('#save-template-btn').textContent = 'Update Template';
+      container.querySelector('#tmpl-name').value = tmpl.name;
+      container.querySelector('#tmpl-cat').value = tmpl.categoryId || '';
+      const exDiv = container.querySelector('#tmpl-exercises');
+      exDiv.innerHTML = '';
+      (tmpl.exercises || []).forEach(ex => {
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        card.style.marginBottom = '10px';
+        card.innerHTML = `
+          <input type="text" class="input tmpl-ex-name" placeholder="Exercise name" style="margin-bottom:6px" value="${ex.name}">
+          <div class="form-group">
+            <label>Default sets</label>
+            <input type="number" class="input tmpl-ex-sets" value="${ex.sets?.length || 3}" min="1" max="10">
+          </div>
+          <div class="form-group">
+            <label>Default reps</label>
+            <input type="number" class="input tmpl-ex-reps" value="${ex.sets?.[0]?.reps || 10}" min="1">
+          </div>
+        `;
+        exDiv.appendChild(card);
+      });
+      container.querySelector('#template-modal').classList.remove('hidden');
     });
   });
 
@@ -600,8 +684,13 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
 
   // New template from scratch
   container.querySelector('#new-template-btn')?.addEventListener('click', () => {
-    container.querySelector('#template-modal').classList.remove('hidden');
+    container.querySelector('#tmpl-edit-id').value = '';
+    container.querySelector('#template-modal-title').textContent = 'New Template';
+    container.querySelector('#save-template-btn').textContent = 'Save Template';
+    container.querySelector('#tmpl-name').value = '';
+    container.querySelector('#tmpl-cat').value = '';
     container.querySelector('#tmpl-exercises').innerHTML = '';
+    container.querySelector('#template-modal').classList.remove('hidden');
   });
 
   container.querySelector('#close-template-modal')?.addEventListener('click', () => {
@@ -636,10 +725,12 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
       sets: Array.from({ length: parseInt(card.querySelector('.tmpl-ex-sets').value) || 3 },
         () => ({ reps: parseInt(card.querySelector('.tmpl-ex-reps').value) || 10, weight: 0, unit: 'kg' }))
     }));
+    const editId = container.querySelector('#tmpl-edit-id').value;
     await save('workoutTemplates', {
-      id: uuid(), name,
+      id: editId || uuid(), name,
       categoryId: container.querySelector('#tmpl-cat').value || null,
-      exercises, createdAt: now()
+      exercises,
+      createdAt: editId ? (templates.find(t => t.id === editId)?.createdAt || now()) : now()
     });
     container.querySelector('#template-modal').classList.add('hidden');
     renderFitness(container);
