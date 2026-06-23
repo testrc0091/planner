@@ -477,6 +477,28 @@ function bindSetEvents(div, ex, bands) {
   });
 }
 
+// ─── Draft persistence ────────────────────────────────────────────────────────
+
+const DRAFT_KEY = 'bloom_workout_draft';
+
+function saveDraft(categoryId, willingness) {
+  localStorage.setItem(DRAFT_KEY, JSON.stringify({
+    categoryId,
+    willingness,
+    startTime: _draftStartTime,
+    totalPaused: _draftTotalPaused,
+    exercises: exerciseList
+  }));
+}
+
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+
+function loadDraft() {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch { return null; }
+}
+
+let _draftStartTime = 0, _draftTotalPaused = 0;
+
 // ─── Fitness events ───────────────────────────────────────────────────────────
 
 function bindFitnessEvents(container, sessions, templates, categories, bands, records) {
@@ -554,7 +576,10 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
 
   // Close modals
   container.querySelector('#close-workout-modal')?.addEventListener('click', () => {
+    if (!confirm('Discard this workout?')) return;
     clearInterval(timerInterval);
+    clearInterval(_draftSaveInterval);
+    clearDraft();
     container.querySelector('#workout-modal').classList.add('hidden');
     resetWorkoutModal(container);
   });
@@ -579,6 +604,9 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
 
     startTime = Date.now();
     totalPaused = 0;
+    _draftStartTime = startTime;
+    _draftTotalPaused = 0;
+    startDraftSaving(container);
     timerInterval = setInterval(() => {
       if (!isPaused) {
         const elapsed = Math.floor((Date.now() - startTime - totalPaused) / 1000);
@@ -602,6 +630,7 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
       container.querySelector('#paused-label').classList.remove('hidden');
     } else {
       totalPaused += Date.now() - pauseStart;
+      _draftTotalPaused = totalPaused;
       isPaused = false;
       container.querySelector('#pause-btn').textContent = '⏸';
       container.querySelector('#paused-label').classList.add('hidden');
@@ -677,6 +706,7 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
       }
     }
 
+    clearDraft();
     container.querySelector('#workout-modal').classList.add('hidden');
     resetWorkoutModal(container);
     renderFitness(container);
@@ -735,6 +765,45 @@ function bindFitnessEvents(container, sessions, templates, categories, bands, re
     container.querySelector('#template-modal').classList.add('hidden');
     renderFitness(container);
   });
+
+  // Restore draft if one exists
+  const draft = loadDraft();
+  if (draft) {
+    exerciseList = [];
+    container.querySelector('#workout-cat').value = draft.categoryId || '';
+    container.querySelector('#willingness').value = draft.willingness || 5;
+    container.querySelector('#will-val').textContent = draft.willingness || 5;
+    container.querySelector('#workout-modal').classList.remove('hidden');
+    container.querySelector('#screen-pre').classList.add('hidden');
+    container.querySelector('#screen-active').classList.remove('hidden');
+
+    const exContainer = container.querySelector('#exercises-container');
+    (draft.exercises || []).forEach(ex => addExerciseCard(exContainer, bands, ex));
+
+    startTime = draft.startTime || Date.now();
+    totalPaused = draft.totalPaused || 0;
+    _draftStartTime = startTime;
+    _draftTotalPaused = totalPaused;
+    startDraftSaving(container);
+
+    timerInterval = setInterval(() => {
+      if (!isPaused) {
+        const elapsed = Math.floor((Date.now() - startTime - totalPaused) / 1000);
+        container.querySelector('#timer-display').textContent = formatSeconds(elapsed);
+      }
+    }, 1000);
+  }
+}
+
+let _draftSaveInterval = null;
+
+function startDraftSaving(container) {
+  clearInterval(_draftSaveInterval);
+  _draftSaveInterval = setInterval(() => {
+    const categoryId = container.querySelector('#workout-cat')?.value || '';
+    const willingness = container.querySelector('#willingness')?.value || 5;
+    saveDraft(categoryId, willingness);
+  }, 10000);
 }
 
 function resetWorkoutModal(container) {
